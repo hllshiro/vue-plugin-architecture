@@ -24,11 +24,10 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
-      external: ['vue', '@vue-plugin-arch/core'],
+      external: ['vue'],
       output: {
         globals: {
           vue: 'Vue',
-          '@vue-plugin-arch/core': 'VuePluginArchCore',
         },
       },
     },

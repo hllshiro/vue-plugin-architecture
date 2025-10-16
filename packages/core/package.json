@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "catalog:",
     "dockview-vue": "catalog:",
     "mitt": "^3.0.1",
     "rimraf": "catalog:",

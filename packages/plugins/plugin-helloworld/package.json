@@ -27,17 +27,13 @@
   ],
   "scripts": {
     "build": "vite build",
-    "dev": "vite build --watch",
     "type-check": "vue-tsc --noEmit",
     "clean": "rimraf dist"
-  },
-  "dependencies": {
-    "@vue-plugin-arch/core": "workspace:*"
   },
   "devDependencies": {
     "@vue-plugin-arch/types": "workspace:*",
     "@types/node": "catalog:",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitejs/plugin-vue": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
