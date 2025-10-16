@@ -1,10 +1,6 @@
 <template>
-  <div class="dynamic-panel-wrapper">
-    <component
-      :is="resolvedComponent"
-      v-bind="endpoint.params.componentProps"
-    />
-  </div>
+  <!-- 暂时只传递自定义属性，屏蔽 dockview api 相关 -->
+  <component :is="resolvedComponent" v-bind="endpoint.params.componentProps" />
 </template>
 
 <script setup lang="ts">
@@ -54,10 +50,3 @@ const resolvedComponent = computed<Component | null>(() => {
   return component
 })
 </script>
-
-<style scoped>
-.dynamic-panel-wrapper {
-  width: 100%;
-  height: 100%;
-}
-</style>
