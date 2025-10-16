@@ -65,7 +65,7 @@ const togglePlugin = async (plugin: UIPlugin) => {
   }
 }
 
-import manifest from 'virtual:plugin-manifest'
+import manifest from 'virtual:vue-plugin-arch/plugin-manifest'
 
 onMounted(() => {
   try {

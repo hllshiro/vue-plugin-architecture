@@ -6,10 +6,10 @@ import { existsSync } from 'fs'
 import { scanAllPlugins, ScannedPlugin } from './scanner'
 
 // Export scanner functions for testing
-export { scanAllPlugins, scanPluginsFromDependencies } from './scanner'
+export { scanAllPlugins } from './scanner'
 export type { ScannedPlugin } from './scanner'
 
-const VIRTUAL_MODULE_ID = 'virtual:plugin-manifest'
+const VIRTUAL_MODULE_ID = 'virtual:vue-plugin-arch/plugin-manifest'
 const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`
 
 export function vuePluginArch(): Plugin {
@@ -177,11 +177,10 @@ export function vuePluginArch(): Plugin {
             })
             .join(',\n')
 
-          const manifestCode = `const manifest = {
+          const manifestCode = `// virtual:vue-plugin-arch/plugin-manifest
+export default {
 ${manifestEntries}
-};
-
-export default manifest;`
+};`
 
           console.log(
             `[@vue-plugin-arch/vite-plugin] Generated manifest for ${plugins.length} plugins`

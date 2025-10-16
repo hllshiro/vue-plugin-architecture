@@ -57,7 +57,9 @@ export class PluginManager implements IPluginManager {
     if (!this.pluginManifest) {
       try {
         // Use dynamic import with string to avoid build-time resolution
-        const manifestModule = await import('virtual:plugin-manifest')
+        const manifestModule = await import(
+          'virtual:vue-plugin-arch/plugin-manifest'
+        )
         this.pluginManifest = manifestModule.default
       } catch (error) {
         console.error('Failed to load plugin manifest:', error)

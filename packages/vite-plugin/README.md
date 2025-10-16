@@ -34,7 +34,7 @@ export default defineConfig({
 
 ```typescript
 // virtual:vue-plugin-arch/plugin-manifest
-const manifest = {
+export default {
   '@vue-plugin-arch/plugin-helloworld': {
     loader: () => import('@vue-plugin-arch/plugin-helloworld'),
     manifest: {
@@ -57,8 +57,6 @@ const manifest = {
     },
   },
 }
-
-export default manifest
 ```
 
 **在应用中使用**

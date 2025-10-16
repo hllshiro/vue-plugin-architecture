@@ -31,7 +31,7 @@ export default defineConfig({
         'mitt',
         'dockview-vue',
         '@vue-plugin-arch/types',
-        'virtual:plugin-manifest',
+        'virtual:vue-plugin-arch/plugin-manifest',
       ],
       output: {
         globals: {

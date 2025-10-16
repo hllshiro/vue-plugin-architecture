@@ -1,4 +1,4 @@
-import { readFile, stat, readdir } from 'fs/promises'
+import { readFile, stat } from 'fs/promises'
 import { existsSync } from 'fs'
 import { resolve as pathResolve, dirname, join } from 'path'
 import resolvePackage from 'resolve'
@@ -50,134 +50,6 @@ async function validatePluginDistFile(
         `Please check file permissions and ensure the plugin build completed successfully.`
     )
   }
-}
-
-/**
- * Scans workspace plugins in packages/plugins directory.
- * @param rootDir - The project root directory.
- * @returns A promise that resolves to an array of workspace plugin scan results.
- */
-async function scanWorkspacePlugins(rootDir: string): Promise<ScannedPlugin[]> {
-  const results: ScannedPlugin[] = []
-  const workspacePluginsDir = pathResolve(rootDir, 'packages/plugins')
-
-  console.log(
-    `[@vue-plugin-arch/vite-plugin] Scanning workspace plugins from: ${workspacePluginsDir}`
-  )
-
-  if (!existsSync(workspacePluginsDir)) {
-    console.log(
-      `[@vue-plugin-arch/vite-plugin] Workspace plugins directory not found, skipping workspace scan`
-    )
-    return results
-  }
-
-  try {
-    const pluginDirs = await readdir(workspacePluginsDir, {
-      withFileTypes: true,
-    })
-    const pluginDirectories = pluginDirs
-      .filter(
-        dirent => dirent.isDirectory() && dirent.name.startsWith('plugin-')
-      )
-      .map(dirent => dirent.name)
-
-    console.log(
-      `[@vue-plugin-arch/vite-plugin] Found ${pluginDirectories.length} workspace plugin directories: ${pluginDirectories.join(', ')}`
-    )
-
-    for (const pluginDirName of pluginDirectories) {
-      const pluginDir = join(workspacePluginsDir, pluginDirName)
-      const packageJsonPath = join(pluginDir, 'package.json')
-
-      console.log(
-        `[@vue-plugin-arch/vite-plugin] Processing workspace plugin: ${pluginDirName}`
-      )
-
-      try {
-        if (!existsSync(packageJsonPath)) {
-          console.warn(
-            `[@vue-plugin-arch/vite-plugin] Skipping workspace plugin "${pluginDirName}": package.json not found`
-          )
-          continue
-        }
-
-        let packageJsonData: PluginManifest
-        try {
-          const pkgJsonStr = await readFile(packageJsonPath, 'utf-8')
-          packageJsonData = JSON.parse(pkgJsonStr)
-        } catch (parseError) {
-          console.warn(
-            `[@vue-plugin-arch/vite-plugin] Skipping workspace plugin "${pluginDirName}": Failed to parse package.json\n` +
-              `Error: ${parseError instanceof Error ? parseError.message : String(parseError)}`
-          )
-          continue
-        }
-
-        // Validate package.json structure
-        if (!packageJsonData.main || packageJsonData.main === '') {
-          console.warn(
-            `[@vue-plugin-arch/vite-plugin] Skipping workspace plugin "${pluginDirName}": No valid main entry point found in package.json`
-          )
-          continue
-        }
-
-        if (!packageJsonData.name) {
-          console.warn(
-            `[@vue-plugin-arch/vite-plugin] Skipping workspace plugin "${pluginDirName}": Missing "name" field in package.json`
-          )
-          continue
-        }
-
-        // Check if dist file exists
-        const distPath = join(pluginDir, packageJsonData.main)
-        console.log(
-          `[@vue-plugin-arch/vite-plugin] Checking workspace plugin dist file: ${distPath}`
-        )
-
-        await validatePluginDistFile(packageJsonData.name, distPath)
-
-        const manifest: PluginManifest = {
-          displayName:
-            packageJsonData.displayName ??
-            packageJsonData.name.replace('@vue-plugin-arch/plugin-', ''),
-          name: packageJsonData.name,
-          version: packageJsonData.version,
-          description: packageJsonData.description ?? '',
-          components: packageJsonData.components,
-          icon: packageJsonData.icon,
-          main: packageJsonData.main,
-        }
-
-        results.push({
-          manifest,
-          packageDir: pluginDir,
-          isWorkspacePlugin: true,
-        })
-        console.log(
-          `[@vue-plugin-arch/vite-plugin] Successfully loaded workspace plugin: ${packageJsonData.name}`
-        )
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error)
-        console.error(
-          `[@vue-plugin-arch/vite-plugin] Failed to load workspace plugin "${pluginDirName}":\n${errorMessage}`
-        )
-        continue
-      }
-    }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error(
-      `[@vue-plugin-arch/vite-plugin] Error scanning workspace plugins:\n${errorMessage}`
-    )
-  }
-
-  console.log(
-    `[@vue-plugin-arch/vite-plugin] Workspace plugin scan completed. Found ${results.length} valid workspace plugins.`
-  )
-
-  return results
 }
 
 /**
@@ -350,10 +222,7 @@ export async function scanAllPlugins(
     `[@vue-plugin-arch/vite-plugin] Starting comprehensive plugin discovery`
   )
 
-  const [dependencyPlugins, workspacePlugins] = await Promise.all([
-    scanPluginsFromDependencies(rootDir),
-    scanWorkspacePlugins(rootDir),
-  ])
+  const dependencyPlugins = await scanPluginsFromDependencies(rootDir)
 
   // Combine results, with workspace plugins taking precedence over dependency plugins
   // if there are name conflicts
@@ -364,22 +233,11 @@ export async function scanAllPlugins(
     pluginMap.set(plugin.manifest.name, plugin)
   }
 
-  // Add workspace plugins, potentially overriding dependency plugins
-  for (const plugin of workspacePlugins) {
-    if (pluginMap.has(plugin.manifest.name)) {
-      console.log(
-        `[@vue-plugin-arch/vite-plugin] Workspace plugin "${plugin.manifest.name}" overrides dependency plugin`
-      )
-    }
-    pluginMap.set(plugin.manifest.name, plugin)
-  }
-
   const allPlugins = Array.from(pluginMap.values())
 
   console.log(
     `[@vue-plugin-arch/vite-plugin] Comprehensive plugin discovery completed. ` +
-      `Found ${dependencyPlugins.length} dependency plugins and ${workspacePlugins.length} workspace plugins. ` +
-      `Total unique plugins: ${allPlugins.length}`
+      `Found ${allPlugins.length} dependency plugins. `
   )
 
   return allPlugins
