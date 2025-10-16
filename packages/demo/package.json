@@ -16,8 +16,7 @@
     "@vue-plugin-arch/vite-plugin": "workspace:*",
     "dockview-vue": "catalog:",
     "mitt": "^3.0.1",
-    "vue": "catalog:",
-    "vue-router": "^4.5.0"
+    "vue": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

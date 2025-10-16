@@ -20,8 +20,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "clean": "pnpm -r clean",
-    "test": "pnpm -r test"
+    "clean": "pnpm -r clean"
   },
   "packageManager": "pnpm@10.18.1",
   "engines": {
