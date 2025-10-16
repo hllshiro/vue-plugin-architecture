@@ -21,7 +21,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "clean": "pnpm -r clean",
-    "prepare": "husky"
+    "prepare": "husky",
+    "publish": "pnpm --filter @vue-plugin-arch/types --filter @vue-plugin-arch/core --filter @vue-plugin-arch/vite-plugin publish",
+    "publish:dry": "pnpm --filter @vue-plugin-arch/types --filter @vue-plugin-arch/core --filter @vue-plugin-arch/vite-plugin publish --dry-run"
   },
   "packageManager": "pnpm@10.18.1",
   "engines": {
