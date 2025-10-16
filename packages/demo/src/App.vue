@@ -6,7 +6,7 @@
       <dockview-vue
         ref="dockviewRef"
         class="dockview-container"
-        :theme="themeLight"
+        :theme="theme"
         @ready="onDockviewReady"
       />
     </main>
@@ -14,8 +14,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, inject, onMounted, onUnmounted } from 'vue'
-import { DockviewVue, DockviewReadyEvent, themeLight } from 'dockview-vue'
+import { ref, inject, onMounted, onUnmounted, provide } from 'vue'
+import {
+  DockviewVue,
+  DockviewReadyEvent,
+  themeLight,
+  DockviewTheme,
+} from 'dockview-vue'
 import type { IPluginManager } from '@vue-plugin-arch/types'
 import Home from './views/Home.vue'
 import PluginManager from './views/PluginManager.vue'
@@ -27,8 +32,14 @@ defineOptions({
   },
 })
 
+const theme = ref(themeLight)
+const changeTheme = (t: DockviewTheme) => {
+  theme.value = t
+}
+
 // 注入依赖
 const pluginManager = inject<IPluginManager>('pluginManager')
+provide('changeTheme', changeTheme)
 
 // 响应式数据
 const dockviewRef = ref<InstanceType<typeof DockviewVue>>()
