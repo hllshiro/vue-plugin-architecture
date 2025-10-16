@@ -7,8 +7,8 @@ import prettierConfig from 'eslint-config-prettier'
 import globals from 'globals'
 
 export default [
-  // 忽略文件 - 必须放在最前面
   {
+    // 忽略文件
     ignores: [
       'dist/**',
       'node_modules/**',
@@ -21,7 +21,6 @@ export default [
 
   // 基础配置
   js.configs.recommended,
-
   // Node.js scripts and config files
   {
     files: [

@@ -1,4 +1,7 @@
 {
-  "*.{js,ts,vue,css}": ["eslint --cache --fix", "prettier --write"],
+  "*.{js,ts,vue,css}": [
+    "eslint --cache --cache-location ./node_modules/.cache/.eslintcache",
+    "prettier --write"
+  ],
   "*.{json,md,yml,yaml}": ["prettier --write"]
 }
