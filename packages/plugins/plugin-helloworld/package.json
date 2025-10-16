@@ -2,6 +2,7 @@
   "name": "@vue-plugin-arch/plugin-helloworld",
   "version": "0.1.0",
   "description": "A simple Hello World plugin demonstrating basic plugin functionality",
+  "private": true,
   "type": "module",
   "icon": "🤖",
   "components": [
