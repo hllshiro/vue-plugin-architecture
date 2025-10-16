@@ -27,7 +27,7 @@
     "@types/node": "catalog:",
     "@vitejs/plugin-vue": "catalog:",
     "dockview-vue": "catalog:",
-    "mitt": "^3.0.1",
+    "mitt": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
