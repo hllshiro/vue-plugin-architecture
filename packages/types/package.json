@@ -1,0 +1,33 @@
+{
+  "name": "@vue-plugin-arch/types",
+  "version": "0.1.0",
+  "description": "Shared types for the Vue Plugin Architecture system",
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "postbuild": "node ./scripts/postbuild.js",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "dockview-vue": "catalog:",
+    "mitt": "catalog:",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vue": "catalog:"
+  },
+  "packageManager": "pnpm@10.18.1"
+}

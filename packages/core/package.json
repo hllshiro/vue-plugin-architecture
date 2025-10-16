@@ -1,0 +1,44 @@
+{
+  "name": "@vue-plugin-arch/core",
+  "version": "0.1.0",
+  "description": "Vue 插件架构系统核心包",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vue-tsc -b && vite build",
+    "type-check": "vue-tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@vue-plugin-arch/types": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "dockview-vue": "catalog:",
+    "mitt": "^3.0.1",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-dts": "catalog:",
+    "vue": "catalog:",
+    "vue-tsc": "catalog:"
+  },
+  "packageManager": "pnpm@10.18.1",
+  "peerDependencies": {
+    "dockview-vue": "catalog:",
+    "mitt": "^3.0.1",
+    "vue": "catalog:"
+  }
+}

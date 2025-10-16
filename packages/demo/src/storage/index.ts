@@ -1,0 +1,1 @@
+export { MemoryPluginStorage } from './MemoryPluginStorage'

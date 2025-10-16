@@ -1,0 +1,33 @@
+{
+  "name": "@vue-plugin-arch/demo",
+  "version": "0.1.0",
+  "description": "Vue 插件架构系统示例应用",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode development",
+    "build": "vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@vue-plugin-arch/core": "workspace:*",
+    "@vue-plugin-arch/plugin-helloworld": "workspace:*",
+    "@vue-plugin-arch/vite-plugin": "workspace:*",
+    "dockview-vue": "catalog:",
+    "mitt": "^3.0.1",
+    "vue": "catalog:",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue-plugin-arch/types": "workspace:*",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-inspect": "^11.3.3",
+    "vue-tsc": "catalog:"
+  },
+  "packageManager": "pnpm@10.18.1"
+}

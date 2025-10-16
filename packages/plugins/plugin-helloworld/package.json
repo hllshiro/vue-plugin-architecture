@@ -1,0 +1,52 @@
+{
+  "name": "@vue-plugin-arch/plugin-helloworld",
+  "version": "0.1.0",
+  "description": "A simple Hello World plugin demonstrating basic plugin functionality",
+  "type": "module",
+  "icon": "🤖",
+  "components": [
+    {
+      "name": "HelloWorldPanel",
+      "path": "./components/HelloWorldPanel.vue",
+      "defaultPosition": "center",
+      "title": "Hello World",
+      "icon": "👋"
+    }
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "type-check": "vue-tsc --noEmit",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@vue-plugin-arch/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@vue-plugin-arch/types": "workspace:*",
+    "@types/node": "catalog:",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "rimraf": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plugin-dts": "catalog:",
+    "vue": "catalog:",
+    "vue-tsc": "catalog:"
+  },
+  "packageManager": "pnpm@10.18.1",
+  "peerDependencies": {
+    "vue": "catalog:"
+  }
+}
