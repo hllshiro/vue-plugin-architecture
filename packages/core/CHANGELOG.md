@@ -1,5 +1,11 @@
 # @vue-plugin-arch/core
 
+## 0.1.2
+
+### Patch Changes
+
+- refactor(dynamic-panel): Simplify component rendering and remove wrapper div
+
 ## 0.1.1
 
 ### Patch Changes

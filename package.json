@@ -22,8 +22,9 @@
     "format:check": "prettier --check .",
     "clean": "pnpm -r clean",
     "prepare": "husky",
-    "publish:version": "pnpm changeset version",
-    "publish:confirm": "pnpm changeset publish"
+    "publish:add": "pnpm changeset",
+    "publish:bump": "pnpm changeset version",
+    "publish:release": "pnpm changeset publish"
   },
   "packageManager": "pnpm@10.18.1",
   "engines": {
