@@ -79,12 +79,16 @@ const onThemeChange = () => {
   max-width: 800px;
   margin: 0 auto;
   padding: 12px;
+  background-color: var(--dv-group-view-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
+  height: 100%;
 }
 
 .theme-selector {
   margin: 1rem 0;
   padding: 1rem;
-  background: #f5f5f5;
+  background-color: var(--dv-tabs-and-actions-container-background-color);
+  border: 1px solid var(--dv-separator-border);
   border-radius: 6px;
 }
 
@@ -92,21 +96,24 @@ const onThemeChange = () => {
   display: inline-block;
   margin-right: 0.5rem;
   font-weight: 500;
+  color: var(--dv-activegroup-visiblepanel-tab-color);
 }
 
 .theme-selector select {
   padding: 0.5rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--dv-separator-border);
   border-radius: 4px;
-  background: white;
+  background-color: var(--dv-group-view-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
   min-width: 150px;
 }
 
 .intro {
-  background: #f9f9f9;
+  background-color: var(--dv-inactivegroup-visiblepanel-tab-background-color);
   padding: 2rem;
   border-radius: 8px;
   margin: 2rem 0;
+  border: 1px solid var(--dv-separator-border);
 }
 
 .intro ul {
@@ -116,6 +123,7 @@ const onThemeChange = () => {
 
 .intro li {
   margin: 0.5rem 0;
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
 }
 
 .actions {
@@ -130,15 +138,16 @@ const onThemeChange = () => {
   border-radius: 4px;
   font-weight: 500;
   transition: all 0.2s;
+  border: 1px solid var(--dv-separator-border);
 }
 
 .btn-primary {
-  background: #007acc;
-  color: white;
+  background-color: var(--dv-activegroup-visiblepanel-tab-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
 }
 
 .btn-primary:hover {
-  background: #005a9e;
+  background-color: var(--dv-icon-hover-background-color);
   transform: translateY(-1px);
 }
 </style>

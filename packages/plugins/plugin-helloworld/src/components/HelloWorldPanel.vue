@@ -242,11 +242,13 @@ onMounted(async () => {
 
 <style scoped>
 .hello-world-panel {
+  background-color: var(--dv-group-view-background-color);
   padding: 16px;
   height: 100%;
   overflow-y: auto;
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--dv-activegroup-visiblepanel-tab-color);
 }
 
 .panel-header {
@@ -255,18 +257,23 @@ onMounted(async () => {
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #e1e5e9;
+  border-bottom: 1px solid var(--dv-separator-border);
+  background-color: var(--dv-tabs-and-actions-container-background-color);
+  padding: 8px 16px;
+  margin: -16px -16px 20px -16px;
+  height: var(--dv-tabs-and-actions-container-height);
 }
 
 .panel-header h3 {
   margin: 0;
-  color: #2c3e50;
-  font-size: 18px;
+  color: var(--dv-activegroup-visiblepanel-tab-color);
+  font-size: var(--dv-tabs-and-actions-container-font-size);
 }
 
 .version {
-  background: #3498db;
-  color: white;
+  background-color: var(--dv-activegroup-visiblepanel-tab-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
+  border: 1px solid var(--dv-paneview-active-outline-color);
   padding: 2px 8px;
   border-radius: 12px;
   font-size: 12px;
@@ -279,7 +286,8 @@ onMounted(async () => {
 }
 
 .welcome-section {
-  background: #f8f9fa;
+  background-color: var(--dv-inactivegroup-visiblepanel-tab-background-color);
+  border: 1px solid var(--dv-separator-border);
   padding: 16px;
   border-radius: 8px;
 }
@@ -297,12 +305,12 @@ onMounted(async () => {
 .welcome-message p {
   margin: 0;
   font-size: 16px;
-  color: #2c3e50;
+  color: var(--dv-activegroup-visiblepanel-tab-color);
 }
 
 .demo-section {
-  background: white;
-  border: 1px solid #e1e5e9;
+  background-color: var(--dv-tabs-and-actions-container-background-color);
+  border: 1px solid var(--dv-separator-border);
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 16px;
@@ -310,8 +318,10 @@ onMounted(async () => {
 
 .demo-section h4 {
   margin: 0 0 16px 0;
-  color: #2c3e50;
+  color: var(--dv-activegroup-visiblepanel-tab-color);
   font-size: 16px;
+  border-bottom: 1px solid var(--dv-paneview-header-border-color);
+  padding-bottom: 8px;
 }
 
 .storage-demo,
@@ -333,16 +343,23 @@ onMounted(async () => {
   flex: 1;
   min-width: 120px;
   padding: 6px 8px;
-  border: 1px solid #d1d9e0;
+  border: 1px solid var(--dv-separator-border);
   border-radius: 4px;
   font-size: 13px;
+  background-color: var(--dv-group-view-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
+}
+
+.storage-controls input:focus,
+.event-controls input:focus {
+  outline: 1px solid var(--dv-paneview-active-outline-color);
 }
 
 .storage-controls button {
   padding: 6px 12px;
-  background: #27ae60;
-  color: white;
-  border: none;
+  background-color: var(--dv-activegroup-visiblepanel-tab-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
+  border: 1px solid var(--dv-paneview-active-outline-color);
   border-radius: 4px;
   font-size: 13px;
   cursor: pointer;
@@ -350,14 +367,14 @@ onMounted(async () => {
 }
 
 .storage-controls button:hover {
-  background: #219a52;
+  background-color: var(--dv-icon-hover-background-color);
 }
 
 .event-controls button {
   padding: 6px 12px;
-  background: #3498db;
-  color: white;
-  border: none;
+  background-color: var(--dv-activegroup-visiblepanel-tab-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
+  border: 1px solid var(--dv-separator-border);
   border-radius: 4px;
   font-size: 13px;
   cursor: pointer;
@@ -365,19 +382,21 @@ onMounted(async () => {
 }
 
 .event-controls button:hover {
-  background: #2980b9;
+  background-color: var(--dv-icon-hover-background-color);
 }
 
 .event-controls .clear-btn {
-  background: #e74c3c;
+  background-color: var(--dv-drag-over-background-color);
+  border-color: var(--dv-drag-over-border-color);
 }
 
 .event-controls .clear-btn:hover {
-  background: #c0392b;
+  background-color: var(--dv-icon-hover-background-color);
 }
 
 .storage-list {
-  background: #f8f9fa;
+  background-color: var(--dv-inactivegroup-visiblepanel-tab-background-color);
+  border: 1px solid var(--dv-separator-border);
   padding: 12px;
   border-radius: 4px;
 }
@@ -385,7 +404,7 @@ onMounted(async () => {
 .storage-list h6 {
   margin: 0 0 8px 0;
   font-size: 12px;
-  color: #5a6c7d;
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
 }
 
 .storage-list ul {
@@ -400,7 +419,7 @@ onMounted(async () => {
   gap: 8px;
   padding: 6px 0;
   font-size: 13px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--dv-separator-border);
 }
 
 .storage-item:last-child {
@@ -408,21 +427,21 @@ onMounted(async () => {
 }
 
 .storage-key {
-  color: #495057;
+  color: var(--dv-activegroup-visiblepanel-tab-color);
   font-weight: 500;
   min-width: 100px;
 }
 
 .storage-value {
-  color: #6c757d;
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
   flex: 1;
   word-break: break-word;
 }
 
 .remove-btn {
-  background: #dc3545;
-  color: white;
-  border: none;
+  background-color: var(--dv-drag-over-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
+  border: 1px solid var(--dv-drag-over-border-color);
   border-radius: 50%;
   width: 20px;
   height: 20px;
@@ -435,11 +454,11 @@ onMounted(async () => {
 }
 
 .remove-btn:hover {
-  background: #c82333;
+  background-color: var(--dv-icon-hover-background-color);
 }
 
 .empty-state {
-  color: #6c757d;
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
   font-style: italic;
   font-size: 13px;
   text-align: center;
@@ -447,7 +466,8 @@ onMounted(async () => {
 }
 
 .event-log {
-  background: #f8f9fa;
+  background-color: var(--dv-inactivegroup-visiblepanel-tab-background-color);
+  border: 1px solid var(--dv-separator-border);
   padding: 12px;
   border-radius: 4px;
 }
@@ -455,7 +475,7 @@ onMounted(async () => {
 .event-log h6 {
   margin: 0 0 8px 0;
   font-size: 12px;
-  color: #5a6c7d;
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
 }
 
 .event-log ul {
@@ -469,7 +489,7 @@ onMounted(async () => {
   gap: 8px;
   padding: 4px 0;
   font-size: 12px;
-  border-bottom: 1px solid #e9ecef;
+  border-bottom: 1px solid var(--dv-separator-border);
 }
 
 .event-item:last-child {
@@ -477,18 +497,18 @@ onMounted(async () => {
 }
 
 .event-time {
-  color: #6c757d;
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
   min-width: 60px;
 }
 
 .event-type {
-  color: #495057;
+  color: var(--dv-activegroup-visiblepanel-tab-color);
   font-weight: 500;
   min-width: 80px;
 }
 
 .event-data {
-  color: #6c757d;
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
   flex: 1;
 }
 </style>

@@ -86,6 +86,9 @@ onMounted(() => {
   max-width: 1000px;
   margin: 0 auto;
   padding: 12px;
+  background-color: var(--dv-group-view-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
+  height: 100%;
 }
 
 .plugin-list {
@@ -99,29 +102,30 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  background: white;
-  border: 1px solid #ddd;
+  background-color: var(--dv-tabs-and-actions-container-background-color);
+  border: 1px solid var(--dv-separator-border);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--dv-floating-box-shadow);
 }
 
 .plugin-info h3 {
   margin: 0 0 0.5rem 0;
-  color: #333;
+  color: var(--dv-activegroup-visiblepanel-tab-color);
 }
 
 .plugin-info p {
   margin: 0 0 0.5rem 0;
-  color: #666;
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
 }
 
 .plugin-version {
   display: inline-block;
   padding: 0.25rem 0.5rem;
-  background: #f0f0f0;
+  background-color: var(--dv-inactivegroup-visiblepanel-tab-background-color);
+  border: 1px solid var(--dv-separator-border);
   border-radius: 4px;
   font-size: 0.875rem;
-  color: #666;
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
 }
 
 .plugin-actions {
@@ -131,45 +135,51 @@ onMounted(() => {
 
 .btn {
   padding: 0.5rem 1rem;
-  border: none;
+  border: 1px solid var(--dv-separator-border);
   border-radius: 4px;
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s;
-  min-width: 80px; /* Ensure button width is consistent */
+  min-width: 80px;
+  background-color: var(--dv-activegroup-visiblepanel-tab-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
 }
 
 .btn:disabled {
-  background-color: #ccc;
+  background-color: var(--dv-inactivegroup-hiddenpanel-tab-background-color);
+  color: var(--dv-inactivegroup-hiddenpanel-tab-color);
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .btn-success {
-  background: #28a745;
-  color: white;
+  background-color: var(--dv-activegroup-visiblepanel-tab-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
+  border-color: var(--dv-paneview-active-outline-color);
 }
 
 .btn-success:hover:not(:disabled) {
-  background: #218838;
+  background-color: var(--dv-icon-hover-background-color);
 }
 
 .btn-danger {
-  background: #dc3545;
-  color: white;
+  background-color: var(--dv-drag-over-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
+  border-color: var(--dv-drag-over-border-color);
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: #c82333;
+  background-color: var(--dv-icon-hover-background-color);
 }
 
 .empty-state {
   text-align: center;
   padding: 3rem;
-  color: #666;
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
 }
 
 .empty-state .hint {
   font-size: 0.875rem;
-  color: #999;
+  color: var(--dv-inactivegroup-hiddenpanel-tab-color);
 }
 </style>
