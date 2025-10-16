@@ -1,0 +1,5 @@
+echo "🔍 Running commit-msg checks..."
+
+pnpx commitlint --edit $1
+
+echo "✅ Commit-msg checks passed!"
