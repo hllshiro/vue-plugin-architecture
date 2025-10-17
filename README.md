@@ -113,10 +113,7 @@ import vue from '@vitejs/plugin-vue'
 import { vuePluginArch } from '@vue-plugin-arch/vite-plugin'
 
 export default defineConfig({
-  plugins: [
-    vue(),
-    vuePluginArch()
-  ]
+  plugins: [vue(), vuePluginArch()],
 })
 ```
 
@@ -176,13 +173,7 @@ class MemoryPluginStorage implements IPluginStorage {
 const app = createApp(App)
 
 // 创建插件管理器
-const pluginManager = createPluginManager(app, new MemoryPluginStorage(), {
-  appInfo: {
-    name: 'My Awesome App',
-    version: '1.0.0',
-    environment: 'development',
-  },
-})
+const pluginManager = createPluginManager(app, new MemoryPluginStorage())
 
 // 将插件管理器提供给整个应用
 app.provide('pluginManager', pluginManager)
@@ -220,18 +211,19 @@ const onDockviewReady = (event: DockviewReadyEvent) => {
     // 将 Dockview API 设置到布局管理器
     pluginManager.layoutManager.setDockviewApi(event.api)
   }
-  
+
   // 你可以在这里添加默认面板
   event.api.addPanel({
     id: 'default-panel',
     component: 'div', // 可以是任意已注册的组件名
-    title: 'Welcome'
-  });
+    title: 'Welcome',
+  })
 }
 </script>
 
 <style>
-.app-main, .dockview-container {
+.app-main,
+.dockview-container {
   height: 100vh;
   width: 100%;
 }
@@ -290,17 +282,17 @@ export const install = (proxy: IPluginServiceProxy): PluginAPI => {
     id: 'my-feature-panel',
     component: MyFeaturePanel,
     title: 'My Feature',
-    position: 'center'
+    position: 'center',
   })
-  
+
   // 获取插件专属数据 API
   const dataAPI = proxy.getDataAPI()
-  
+
   return {
     teardown: async () => {
       proxy.removePanel(panelId)
       await dataAPI.removeAll()
-    }
+    },
   }
 }
 ```
@@ -331,10 +323,10 @@ const result = ref('')
 
 const doSomething = async () => {
   result.value = 'Feature executed!'
-  
+
   // 通过 props.proxy 调用核心 API
   props.proxy.eventBus.emit('my-feature:executed', {
-    timestamp: Date.now()
+    timestamp: Date.now(),
   })
 }
 </script>

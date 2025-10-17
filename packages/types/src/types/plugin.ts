@@ -265,26 +265,6 @@ export interface IPluginDataAPI {
 
 export interface IPluginDataService {
   /**
-   * 初始化全局数据
-   * @param data 全局数据对象
-   */
-  initGlobalData(data: Record<string, unknown>): void
-
-  /**
-   * 设置全局数据
-   * @param key 数据键
-   * @param value 数据值
-   */
-  setGlobalData(key: string, value: unknown): void
-
-  /**
-   * 获取全局数据
-   * @param key 数据键
-   * @returns 数据值，不存在时返回undefined
-   */
-  getGlobalData(key: string): unknown
-
-  /**
    * 获取数据
    * @param key 数据键
    * @returns 数据值，不存在时返回undefined
@@ -320,11 +300,11 @@ export interface IPluginDataService {
    * @param name 插件ID
    * @returns 插件专用的数据API实例
    */
-  createPluginDataAPI(name: string): IPluginDataAPI
+  createAPI(name: string): IPluginDataAPI
 
   /**
    * 销毁特定插件数据API实例
    * @param name 插件ID
    */
-  destroyPluginDataAPI(name: string): void
+  destroyAPI(name: string): void
 }

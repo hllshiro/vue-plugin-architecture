@@ -26,11 +26,5 @@ pnpm add @vue-plugin-arch/core
 import { createPluginManager } from '@vue-plugin-arch/core'
 
 // 创建插件管理器
-const pluginManager = createPluginManager(app, storage, {
-  appInfo: {
-    name: 'Vue Plugin Architecture Demo',
-    version: '0.1.0',
-    environment: 'development',
-  },
-})
+const pluginManager = createPluginManager(app, storage)
 ```

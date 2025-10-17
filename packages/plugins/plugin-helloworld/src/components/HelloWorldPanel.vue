@@ -136,18 +136,7 @@ const saveData = async () => {
   if (storageKey.value.trim() && storageValue.value.trim() && dataAPI) {
     await dataAPI.set(storageKey.value, storageValue.value)
 
-    // Update the stored data list
-    const existingIndex = storedData.value.findIndex(
-      item => item.key === storageKey.value
-    )
-    if (existingIndex >= 0) {
-      storedData.value[existingIndex].value = storageValue.value
-    } else {
-      storedData.value.push({
-        key: storageKey.value,
-        value: storageValue.value,
-      })
-    }
+    await loadAllStoredData()
 
     // Clear inputs after successful save
     storageKey.value = ''
@@ -158,7 +147,7 @@ const saveData = async () => {
 const removeData = async (key: string) => {
   if (dataAPI) {
     await dataAPI.remove(key)
-    storedData.value = storedData.value.filter(item => item.key !== key)
+    await loadAllStoredData()
   }
 }
 

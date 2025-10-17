@@ -31,18 +31,11 @@ export class PluginManager implements IPluginManager {
   private loadingPromises = new Map<string, Promise<void>>()
   private pluginManifest: PluginLoaderMap | null = null
 
-  constructor(
-    app: App,
-    storage: IPluginStorage,
-    globalData?: Record<string, unknown>
-  ) {
+  constructor(app: App, storage: IPluginStorage) {
     this.eventBus = globalEventBus
     this.storage = storage
 
     this.dataService = createPluginDataService(this.storage, this.eventBus)
-    if (globalData) {
-      this.dataService.initGlobalData(globalData)
-    }
     this.layoutManager = createPluginLayoutManager(app, this.eventBus)
     this.stateManager = new PluginStateManager()
 
@@ -250,8 +243,7 @@ export class PluginManager implements IPluginManager {
 
 export function createPluginManager(
   app: App,
-  storage: IPluginStorage,
-  globalData?: Record<string, unknown>
+  storage: IPluginStorage
 ): IPluginManager {
-  return new PluginManager(app, storage, globalData)
+  return new PluginManager(app, storage)
 }

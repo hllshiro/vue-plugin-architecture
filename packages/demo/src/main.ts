@@ -10,15 +10,11 @@ const app = createApp(App)
 
 // 创建存储实现
 const storage = new MemoryPluginStorage()
+storage.set('global', 'global:theme', 'light')
+storage.set('global', 'global:language', 'zh-CN')
 
 // 创建插件管理器
-const pluginManager = createPluginManager(app, storage, {
-  appInfo: {
-    name: 'Vue Plugin Architecture Demo',
-    version: '0.1.0',
-    environment: 'development',
-  },
-})
+const pluginManager = createPluginManager(app, storage)
 
 // 将插件管理器提供给整个应用
 app.provide('pluginManager', pluginManager)

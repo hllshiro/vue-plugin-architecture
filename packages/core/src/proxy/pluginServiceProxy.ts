@@ -84,7 +84,7 @@ export class PluginServiceProxy implements IPluginServiceProxy {
   // 数据存储管理方法
   getDataAPI(): IPluginDataAPI {
     try {
-      const dataAPI = this.dataService.createPluginDataAPI(this.name)
+      const dataAPI = this.dataService.createAPI(this.name)
       console.debug(`Data API created for plugin: ${this.name}`)
       return dataAPI
     } catch (error) {
