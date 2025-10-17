@@ -1,10 +1,8 @@
 import type {
   IEventBus,
   IPluginStorage,
-  IPluginDataAPI,
   IPluginDataService,
 } from '@vue-plugin-arch/types'
-import { PluginDataAPI } from './pluginDataApi'
 
 /**
  * 插件数据存储服务
@@ -19,8 +17,6 @@ const EVENTS = {
 } as const
 
 export class PluginDataService implements IPluginDataService {
-  private readonly pluginDataAPIs = new Map<string, IPluginDataAPI>()
-
   constructor(
     private readonly storage: IPluginStorage,
     private readonly eventBus: IEventBus
@@ -94,20 +90,6 @@ export class PluginDataService implements IPluginDataService {
     await this.handleDataOperation(name, 'remove all data', () =>
       this.storage.removeAll(name)
     )
-  }
-
-  createAPI(name: string): IPluginDataAPI {
-    if (this.pluginDataAPIs.has(name)) {
-      return this.pluginDataAPIs.get(name)!
-    }
-
-    const api = new PluginDataAPI(name, this)
-    this.pluginDataAPIs.set(name, api)
-    return api
-  }
-
-  destroyAPI(name: string): void {
-    this.pluginDataAPIs.delete(name)
   }
 
   private isGlobal(key: string): boolean {

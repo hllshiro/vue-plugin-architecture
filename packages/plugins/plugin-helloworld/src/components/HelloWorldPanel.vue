@@ -122,25 +122,22 @@ interface message {
   name: string
 }
 
-// Get data API for storage operations
-const dataAPI = proxy?.getDataAPI()
-
 // Methods
 const sendTestMessage = () => {
   if (messageText.value.trim() && proxy) {
     // Emit event through the plugin system
-    proxy.eventBus.emit('hello-world:message', {
+    proxy.eventApi.emit('hello-world:message', {
       message: messageText.value,
       timestamp: Date.now(),
       name: props.name,
-    } as message)
+    })
     messageText.value = ''
   }
 }
 
 const saveData = async () => {
-  if (storageKey.value.trim() && storageValue.value.trim() && dataAPI) {
-    await dataAPI.set(storageKey.value, storageValue.value)
+  if (storageKey.value.trim() && storageValue.value.trim() && proxy) {
+    await proxy.dataApi.set(storageKey.value, storageValue.value)
 
     await loadAllStoredData()
 
@@ -151,15 +148,15 @@ const saveData = async () => {
 }
 
 const removeData = async (key: string) => {
-  if (dataAPI) {
-    await dataAPI.remove(key)
+  if (proxy) {
+    await proxy.dataApi.remove(key)
     await loadAllStoredData()
   }
 }
 
 const loadAllStoredData = async () => {
-  if (dataAPI) {
-    const allData = await dataAPI.getAll()
+  if (proxy) {
+    const allData = await proxy.dataApi.getAll()
     const data = Object.entries(allData).map(([key, value]) => ({
       key,
       value: String(value),
@@ -190,9 +187,9 @@ const formatTime = (timestamp: number) => {
 // Lifecycle
 onMounted(async () => {
   // Load welcome message from storage if available
-  if (dataAPI) {
+  if (proxy) {
     try {
-      const savedMessage = await dataAPI.get('welcomeMessage')
+      const savedMessage = await proxy.dataApi.get('welcomeMessage')
       if (savedMessage) {
         welcomeMessage.value = String(savedMessage)
       }
@@ -206,23 +203,31 @@ onMounted(async () => {
 
   // Listen for events from other plugins or the system
   if (proxy) {
-    proxy.eventBus.on('plugin:loaded', payload => {
+    proxy.eventApi.on('plugin:loaded', payload => {
       addEvent('plugin:loaded', payload.name)
     })
-    proxy.eventBus.on('plugin:unloaded', payload => {
+    proxy.eventApi.on('plugin:unloaded', payload => {
       addEvent('plugin:unloaded', payload.name)
     })
-    proxy.eventBus.on('data:changed', payload => {
-      const eventType =
-        payload.name === 'global'
-          ? 'global:data:changed'
-          : 'plugin:data:changed'
+    proxy.eventApi.on('data:changed', payload => {
       addEvent(
-        eventType,
+        'data:changed',
         `[${payload.name}] ${payload.key}: ${payload.oldValue} -> ${payload.newValue}`
       )
     })
-    proxy.eventBus.on('hello-world:message', payload => {
+
+    proxy.eventApi.on(
+      'data:changed',
+      payload => {
+        addEvent(
+          'data:changed',
+          `[${payload.name}] ${payload.key}: ${payload.oldValue} -> ${payload.newValue}`
+        )
+      },
+      'global'
+    )
+
+    proxy.eventApi.on('hello-world:message', payload => {
       addEvent(
         'hello-world:message',
         `[${(payload as message).name}](${(payload as message).timestamp}): ${(payload as message).message}`

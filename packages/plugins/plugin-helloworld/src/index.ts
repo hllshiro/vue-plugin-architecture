@@ -19,10 +19,13 @@ const HELLO_WORLD_PANEL_COMPONENT = 'HelloWorldPanelComponent'
  */
 export const install = (proxy: IPluginServiceProxy): PluginAPI => {
   // 1. 通过 proxy 将组件注册到主应用
-  proxy.registerComponent(HELLO_WORLD_PANEL_COMPONENT, HelloWorldPanel)
+  proxy.layoutApi.registerComponent(
+    HELLO_WORLD_PANEL_COMPONENT,
+    HelloWorldPanel
+  )
 
   // 2. 使用组件的注册名 (string) 来注册面板
-  const panelId = proxy.registerPanel({
+  const panelId = proxy.layoutApi.registerPanel({
     id: 'hello-world-panel',
     component: HELLO_WORLD_PANEL_COMPONENT, // 传递字符串ID
     title: 'Hello World',
@@ -34,23 +37,20 @@ export const install = (proxy: IPluginServiceProxy): PluginAPI => {
     },
   })
 
-  // Get data API for this plugin
-  const dataAPI = proxy.getDataAPI()
-
   // Set up a simple welcome message in storage
-  dataAPI.set('welcomeMessage', 'Hello from Vue Plugin Architecture!')
+  proxy.dataApi.set('welcomeMessage', 'Hello from Vue Plugin Architecture!')
 
   // Return plugin API with teardown method
   return {
     teardown: async () => {
       // 移除面板
-      proxy.removePanel(panelId)
+      proxy.layoutApi.removePanel(panelId)
 
       // 注销组件
-      proxy.unregisterComponent(HELLO_WORLD_PANEL_COMPONENT)
+      proxy.layoutApi.unregisterComponent(HELLO_WORLD_PANEL_COMPONENT)
 
       // Emit plugin unloaded event
-      proxy.eventBus.emit('plugin:unloaded', {
+      proxy.eventApi.emit('plugin:unloaded', {
         name: manifest.name,
       })
     },

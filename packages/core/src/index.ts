@@ -1,6 +1,6 @@
 // 新的插件数据服务
 export * from './data/pluginDataService'
-export * from './data/pluginDataApi'
+export * from './proxy/pluginDataApi'
 
 // 事件总线实现
 export * from './event/eventBus'
@@ -16,6 +16,9 @@ export * from './plugin/pluginManager'
 export * from './plugin/pluginStateManager'
 
 // 插件服务代理模块
+export * from './proxy/pluginDataApi'
+export * from './proxy/pluginEventApi'
+export * from './proxy/pluginLayoutApi'
 export * from './proxy/pluginServiceProxy'
 
 // 错误类

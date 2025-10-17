@@ -1,8 +1,9 @@
 // 插件系统相关类型定义
 
 import type { DockviewApi, IDockviewPanel } from 'dockview-vue'
-import type { EventHandler, IEventBus } from './events'
+import type { EventHandler, IEventBus, PluginEvents } from './events'
 import type { Component } from 'vue'
+import { Handler } from 'mitt'
 
 // Forward declarations to avoid circular imports
 export type PanelPosition = 'left' | 'right' | 'top' | 'bottom' | 'center'
@@ -101,27 +102,6 @@ export interface Plugin {
 export interface PluginAPI {
   teardown?: () => void | Promise<void>
   [key: string]: unknown
-}
-
-// 插件服务代理接口
-export interface IPluginServiceProxy {
-  readonly eventBus: IEventBus
-
-  // 面板管理
-  registerPanel(options: PanelOptions): string
-  removePanel(panelId: string): void
-  updatePanel(panelId: string, options: Partial<PanelOptions>): void
-
-  // 数据存储管理 - 返回插件专用的数据API实例
-  getDataAPI(): IPluginDataAPI
-
-  /**
-   * Registers a component with the host application.
-   * @param name - A unique name for the component.
-   * @param component - The Vue component object to register.
-   */
-  registerComponent(name: string, component: Component): void
-  unregisterComponent(name: string): void
 }
 
 // 插件管理器接口
@@ -225,9 +205,41 @@ export interface DataChangeEvent {
   newValue?: unknown
 }
 
+export interface IPluginDataService {
+  /**
+   * 获取数据
+   * @param key 数据键
+   * @returns 数据值，不存在时返回undefined
+   */
+  get(name: string, key: string): Promise<unknown>
+
+  /**
+   * 设置数据
+   * @param key 数据键
+   * @param value 数据值
+   */
+  set(name: string, key: string, value: unknown): Promise<void>
+
+  /**
+   * 删除数据
+   * @param key 数据键
+   */
+  remove(name: string, key: string): Promise<void>
+
+  /**
+   * 获取插件所有数据（包含全局数据）
+   * @returns 插件数据与全局数据的合并结果，插件数据优先
+   */
+  getAll(name: string): Promise<Record<string, unknown>>
+
+  /**
+   * 删除插件所有数据（重置）
+   */
+  removeAll(name: string): Promise<void>
+}
+
 /**
- * 插件数据API接口 - 每个插件获得的数据API实例
- * 提供简化的异步数据操作方法
+ * 插件数据API接口
  */
 export interface IPluginDataAPI {
   /**
@@ -261,49 +273,49 @@ export interface IPluginDataAPI {
    */
   removeAll(): Promise<void>
 }
+/**
+ * 插件事件API接口
+ */
+export interface IPluginEventAPI {
+  on<Key extends keyof PluginEvents>(
+    event: Key,
+    handler: Handler<PluginEvents[Key]>,
+    scope?: string
+  ): void
+  off<Key extends keyof PluginEvents>(
+    event: Key,
+    handler?: Handler<PluginEvents[Key]>,
+    scope?: string
+  ): void
+  emit<Key extends keyof PluginEvents>(
+    event: Key,
+    payload: PluginEvents[Key],
+    scope?: string
+  ): void
+  emit<Key extends keyof PluginEvents>(
+    event: undefined extends PluginEvents[Key] ? Key : never,
+    scope?: string
+  ): void
+  once<Key extends keyof PluginEvents>(
+    event: Key,
+    handler: Handler<PluginEvents[Key]>,
+    scope?: string
+  ): void
+}
 
-export interface IPluginDataService {
-  /**
-   * 获取数据
-   * @param key 数据键
-   * @returns 数据值，不存在时返回undefined
-   */
-  get(name: string, key: string): Promise<unknown>
+export interface IPluginLayoutApi {
+  registerPanel(options: PanelOptions): string
+  removePanel(panelId: string): void
+  updatePanel(panelId: string, options: Partial<PanelOptions>): void
+  registerComponent(name: string, component: Component): void
+  unregisterComponent(name: string): void
+}
 
-  /**
-   * 设置数据
-   * @param key 数据键
-   * @param value 数据值
-   */
-  set(name: string, key: string, value: unknown): Promise<void>
+// 插件服务代理接口
+export interface IPluginServiceProxy {
+  readonly dataApi: IPluginDataAPI
+  readonly eventApi: IPluginEventAPI
+  readonly layoutApi: IPluginLayoutApi
 
-  /**
-   * 删除数据
-   * @param key 数据键
-   */
-  remove(name: string, key: string): Promise<void>
-
-  /**
-   * 获取插件所有数据（包含全局数据）
-   * @returns 插件数据与全局数据的合并结果，插件数据优先
-   */
-  getAll(name: string): Promise<Record<string, unknown>>
-
-  /**
-   * 删除插件所有数据（重置）
-   */
-  removeAll(name: string): Promise<void>
-
-  /**
-   * 为特定插件创建数据API实例
-   * @param name 插件ID
-   * @returns 插件专用的数据API实例
-   */
-  createAPI(name: string): IPluginDataAPI
-
-  /**
-   * 销毁特定插件数据API实例
-   * @param name 插件ID
-   */
-  destroyAPI(name: string): void
+  destroy(): void
 }

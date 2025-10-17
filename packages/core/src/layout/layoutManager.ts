@@ -92,7 +92,7 @@ export class PluginLayoutManager implements IPluginLayoutManager {
       this.panels.set(panelId, panelInfo)
 
       // 发送事件
-      this.eventBus?.emit('panel:registered', { panelId, options })
+      this.eventBus.emit('panel:registered', { panelId, options })
 
       return panelId
     } catch (error) {
@@ -119,7 +119,7 @@ export class PluginLayoutManager implements IPluginLayoutManager {
       const panel = panelInfo.panel
       this.dockviewApi.removePanel(panel)
       this.panels.delete(panelId)
-      this.eventBus?.emit('panel:removed', { panelId })
+      this.eventBus.emit('panel:removed', { panelId })
     } catch (error) {
       throw new Error(
         `Failed to remove panel ${panelId}: ${(error as Error).message}`
@@ -149,7 +149,7 @@ export class PluginLayoutManager implements IPluginLayoutManager {
 
       // 更新记录
       panelInfo.options = { ...panelInfo.options, ...options }
-      this.eventBus?.emit('panel:updated', { panelId, options })
+      this.eventBus.emit('panel:updated', { panelId, options })
     } catch (error) {
       throw new Error(
         `Failed to update panel ${panelId}: ${(error as Error).message}`
@@ -190,7 +190,7 @@ export class PluginLayoutManager implements IPluginLayoutManager {
    */
   registerComponent(name: string, component: Component): void {
     this.componentRegistry.registerComponent(name, component)
-    this.eventBus?.emit('component:registered', { name })
+    this.eventBus.emit('component:registered', { name })
   }
 
   /**
@@ -198,7 +198,7 @@ export class PluginLayoutManager implements IPluginLayoutManager {
    */
   unregisterComponent(name: string): void {
     this.componentRegistry.unregisterComponent(name)
-    this.eventBus?.emit('component:unregistered', { name })
+    this.eventBus.emit('component:unregistered', { name })
   }
 
   /**
@@ -206,7 +206,7 @@ export class PluginLayoutManager implements IPluginLayoutManager {
    */
   registerAsyncComponent(name: string, loader: () => Promise<Component>): void {
     this.componentRegistry.registerAsyncComponent(name, loader)
-    this.eventBus?.emit('component:registered', { name, async: true })
+    this.eventBus.emit('component:registered', { name, async: true })
   }
 
   /**
@@ -214,7 +214,7 @@ export class PluginLayoutManager implements IPluginLayoutManager {
    */
   registerComponentFromPath(name: string, modulePath: string): void {
     this.componentRegistry.registerComponentFromPath(name, modulePath)
-    this.eventBus?.emit('component:registered', { name, path: modulePath })
+    this.eventBus.emit('component:registered', { name, path: modulePath })
   }
 
   /**
@@ -271,7 +271,7 @@ export class PluginLayoutManager implements IPluginLayoutManager {
         ...options,
         component: options.componentName,
       }
-      this.eventBus?.emit('panel:registered', {
+      this.eventBus.emit('panel:registered', {
         panelId,
         options: completeOptions,
       })
@@ -323,7 +323,7 @@ export class PluginLayoutManager implements IPluginLayoutManager {
         params: newParams,
       }
 
-      this.eventBus?.emit('panel:component-updated', {
+      this.eventBus.emit('panel:component-updated', {
         panelId,
         componentName,
         componentProps,
