@@ -15,8 +15,7 @@ const CONSTANT_GLOBAL_KEY_PREFIX = `${CONSTANT_GLOBAL_PREFIX}:`
 
 // Event types
 const EVENTS = {
-  PLUGIN_DATA_CHANGED: 'plugin:data:changed',
-  GLOBAL_DATA_CHANGED: 'global:data:changed',
+  DATA_CHANGED: 'data:changed',
 } as const
 
 export class PluginDataService implements IPluginDataService {
@@ -104,8 +103,6 @@ export class PluginDataService implements IPluginDataService {
 
     const api = new PluginDataAPI(name, this)
     this.pluginDataAPIs.set(name, api)
-
-    console.debug(`Created data API for plugin: ${name}`)
     return api
   }
 
@@ -135,12 +132,16 @@ export class PluginDataService implements IPluginDataService {
     oldValue: unknown,
     newValue?: unknown
   ): void {
-    this.eventBus.emit(EVENTS.PLUGIN_DATA_CHANGED, {
-      name,
-      key,
-      oldValue,
-      newValue,
-    })
+    this.eventBus.emit(
+      EVENTS.DATA_CHANGED,
+      {
+        name,
+        key,
+        oldValue,
+        newValue,
+      },
+      name
+    )
   }
 
   private notifyGlobalChange(
@@ -148,11 +149,16 @@ export class PluginDataService implements IPluginDataService {
     oldValue: unknown,
     newValue?: unknown
   ): void {
-    this.eventBus.emit(EVENTS.GLOBAL_DATA_CHANGED, {
-      key,
-      oldValue,
-      newValue,
-    })
+    this.eventBus.emit(
+      EVENTS.DATA_CHANGED,
+      {
+        name: CONSTANT_GLOBAL_PREFIX,
+        key,
+        oldValue,
+        newValue,
+      },
+      CONSTANT_GLOBAL_PREFIX
+    )
   }
 }
 

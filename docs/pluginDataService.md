@@ -66,7 +66,7 @@ flowchart TD
         D{"Try...Catch Block"}
         E["Get old value: `storage.get(pluginName, key)`"]
         F["Set new value: `storage.set(pluginName, key, value)`"]
-        G["Notify change: `eventBus.emit('plugin:data:changed', ...)`"]
+        G["Notify change: `eventBus.emit('plugin:data:changed', ..., pluginName)`"]
         H["Success"]
         I["Log error and throw"]
     end
@@ -98,6 +98,6 @@ flowchart TD
     - 它首先从 `storage` 中获取旧值，以便后续通知时可以提供。
     - 然后，它调用 `storage.set()` 将新值持久化。
     - 如果操作成功，它会调用 `notifyChange()` 方法。
-4.  **发布事件**: `notifyChange()` 方法通过 `eventBus` 发布一个 `plugin:data:changed` 事件，并将插件名称、键、旧值和新值作为负载。
+4.  **发布事件**: `notifyChange()` 方法通过 `eventBus` 发布一个 `plugin:data:changed` 事件，并将插件名称、键、旧值和新值作为负载，同时将插件名称作为 `scope` 参数传递，以实现精确的事件通知。
 5.  **事件广播**: `EventBus` 将此事件广播给所有订阅了该事件的监听器，从而实现对数据变更的响应。
 6.  **错误处理**: 如果在存储过程中发生任何错误，`catch` 块会捕获异常，记录错误信息，然后将异常向上抛出。

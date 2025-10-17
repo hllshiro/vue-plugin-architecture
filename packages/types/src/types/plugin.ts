@@ -162,7 +162,7 @@ export interface PluginState {
 /**
  * 数据变更监听器
  */
-export type DataChangeListener = (event: PluginDataChangeEvent) => void
+export type DataChangeListener = (event: DataChangeEvent) => void
 
 /**
  * 插件存储接口 - 宿主应用需要实现的存储接口
@@ -215,17 +215,16 @@ export interface IPluginStorage {
  * 数据变更事件
  */
 export interface DataChangeEvent {
+  /** 插件ID，global代表全局 */
+  name: string
   /** 变更的数据键 */
   key: string
-  /** 旧值 */
+  /** 旧值，null代表新增 */
   oldValue: unknown
-  /** 新值 */
+  /** 新值，null代表删除 */
   newValue?: unknown
 }
-export interface PluginDataChangeEvent extends DataChangeEvent {
-  /** 插件ID */
-  name: string
-}
+
 /**
  * 插件数据API接口 - 每个插件获得的数据API实例
  * 提供简化的异步数据操作方法

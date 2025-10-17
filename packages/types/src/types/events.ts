@@ -1,12 +1,7 @@
 // 事件系统相关类型定义
 
 import type { IPluginError } from './errors'
-import type {
-  PluginManifest,
-  PanelOptions,
-  DataChangeEvent,
-  PluginDataChangeEvent,
-} from './plugin'
+import type { PluginManifest, PanelOptions, DataChangeEvent } from './plugin'
 import type { Handler } from 'mitt'
 
 export type EventHandler = (payload?: unknown) => void | Promise<void>
@@ -19,30 +14,34 @@ export interface PluginEvents extends Record<string | symbol, unknown> {
   'panel:registered': { panelId: string; options: PanelOptions }
   'panel:removed': { panelId: string }
   'panel:updated': { panelId: string; options: Partial<PanelOptions> }
-  'global:data:changed': DataChangeEvent
-  'plugin:data:changed': PluginDataChangeEvent
+  'data:changed': DataChangeEvent
 }
 
 // 事件总线接口
 export interface IEventBus {
   on<Key extends keyof PluginEvents>(
     event: Key,
-    handler: Handler<PluginEvents[Key]>
+    handler: Handler<PluginEvents[Key]>,
+    scope?: string
   ): void
   off<Key extends keyof PluginEvents>(
     event: Key,
-    handler?: Handler<PluginEvents[Key]>
+    handler?: Handler<PluginEvents[Key]>,
+    scope?: string
   ): void
   emit<Key extends keyof PluginEvents>(
     event: Key,
-    payload: PluginEvents[Key]
+    payload: PluginEvents[Key],
+    scope?: string
   ): void
   emit<Key extends keyof PluginEvents>(
-    event: undefined extends PluginEvents[Key] ? Key : never
+    event: undefined extends PluginEvents[Key] ? Key : never,
+    scope?: string
   ): void
   once<Key extends keyof PluginEvents>(
     event: Key,
-    handler: Handler<PluginEvents[Key]>
+    handler: Handler<PluginEvents[Key]>,
+    scope?: string
   ): void
-  clear(): void
+  clear(scope?: string): void
 }

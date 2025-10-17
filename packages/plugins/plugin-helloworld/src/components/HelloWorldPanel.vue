@@ -212,15 +212,13 @@ onMounted(async () => {
     proxy.eventBus.on('plugin:unloaded', payload => {
       addEvent('plugin:unloaded', payload.name)
     })
-    proxy.eventBus.on('global:data:changed', payload => {
+    proxy.eventBus.on('data:changed', payload => {
+      const eventType =
+        payload.name === 'global'
+          ? 'global:data:changed'
+          : 'plugin:data:changed'
       addEvent(
-        'global:data:changed',
-        `${payload.key}: ${payload.oldValue} -> ${payload.newValue}`
-      )
-    })
-    proxy.eventBus.on('plugin:data:changed', payload => {
-      addEvent(
-        'plugin:data:changed',
+        eventType,
         `[${payload.name}] ${payload.key}: ${payload.oldValue} -> ${payload.newValue}`
       )
     })
