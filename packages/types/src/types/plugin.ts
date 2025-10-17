@@ -220,7 +220,7 @@ export interface DataChangeEvent {
   /** 旧值 */
   oldValue: unknown
   /** 新值 */
-  newValue: unknown
+  newValue?: unknown
 }
 export interface PluginDataChangeEvent extends DataChangeEvent {
   /** 插件ID */

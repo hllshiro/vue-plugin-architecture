@@ -12,31 +12,48 @@ import { PluginDataAPI } from './pluginDataApi'
  */
 const CONSTANT_GLOBAL_PREFIX = 'global'
 const CONSTANT_GLOBAL_KEY_PREFIX = `${CONSTANT_GLOBAL_PREFIX}:`
+
+// Event types
+const EVENTS = {
+  PLUGIN_DATA_CHANGED: 'plugin:data:changed',
+  GLOBAL_DATA_CHANGED: 'global:data:changed',
+} as const
+
 export class PluginDataService implements IPluginDataService {
-  private pluginDataAPIs = new Map<string, IPluginDataAPI>()
+  private readonly pluginDataAPIs = new Map<string, IPluginDataAPI>()
 
   constructor(
     private readonly storage: IPluginStorage,
     private readonly eventBus: IEventBus
   ) {}
 
-  async get(name: string, key: string): Promise<unknown> {
+  private async handleDataOperation<T>(
+    pluginName: string,
+    operation: string,
+    action: () => Promise<T>
+  ): Promise<T> {
     try {
-      if (this.isGlobal(key)) {
-        return await this.getGlobal(key)
-      }
-      return await this.storage.get(name, key)
+      return await action()
     } catch (error) {
       console.error(
-        `[PluginDataService][${name}] Failed to get data "${key}"`,
+        `[PluginDataService][${pluginName}] ${operation} failed`,
         error
       )
       throw error
     }
   }
 
+  async get(name: string, key: string): Promise<unknown> {
+    return this.handleDataOperation(name, `get data "${key}"`, () => {
+      if (this.isGlobal(key)) {
+        return this.getGlobal(key)
+      }
+      return this.storage.get(name, key)
+    })
+  }
+
   async set(name: string, key: string, value: unknown): Promise<void> {
-    try {
+    await this.handleDataOperation(name, `set data "${key}"`, async () => {
       const oldValue = await this.get(name, key)
       if (this.isGlobal(key)) {
         await this.setGlobal(key, value)
@@ -45,17 +62,11 @@ export class PluginDataService implements IPluginDataService {
         await this.storage.set(name, key, value)
         this.notifyChange(name, key, oldValue, value)
       }
-    } catch (error) {
-      console.error(
-        `[PluginDataService][${name}] Failed to set data "${key}"`,
-        error
-      )
-      throw error
-    }
+    })
   }
 
   async remove(name: string, key: string): Promise<void> {
-    try {
+    await this.handleDataOperation(name, `remove data "${key}"`, async () => {
       const oldValue = await this.get(name, key)
       if (this.isGlobal(key)) {
         await this.removeGlobal(key)
@@ -64,45 +75,33 @@ export class PluginDataService implements IPluginDataService {
         await this.storage.remove(name, key)
         this.notifyChange(name, key, oldValue)
       }
-    } catch (error) {
-      console.error(
-        `[PluginDataService][${name}] Failed to remove data "${key}":`,
-        error
-      )
-      throw error
-    }
+    })
   }
 
   async getAll(name: string): Promise<Record<string, unknown>> {
-    try {
-      const data = await this.storage.getAll(name)
-      const global = await this.storage.getAll(CONSTANT_GLOBAL_PREFIX)
+    return this.handleDataOperation(name, 'get all data', async () => {
+      const [data, globalData] = await Promise.all([
+        this.storage.getAll(name),
+        this.storage.getAll(CONSTANT_GLOBAL_PREFIX),
+      ])
       return {
         ...data,
-        ...global,
+        ...globalData,
       }
-    } catch (error) {
-      console.error(`[PluginDataService][${name}] Failed to getAll`, error)
-      throw error
-    }
+    })
   }
 
   async removeAll(name: string): Promise<void> {
-    try {
-      return await this.storage.removeAll(name)
-    } catch (error) {
-      console.error(`[PluginDataService][${name}] Failed to removeAll`, error)
-      throw error
-    }
+    await this.handleDataOperation(name, 'remove all data', () =>
+      this.storage.removeAll(name)
+    )
   }
 
   createAPI(name: string): IPluginDataAPI {
-    // 如果已存在，直接返回
     if (this.pluginDataAPIs.has(name)) {
       return this.pluginDataAPIs.get(name)!
     }
 
-    // 创建新的API实例
     const api = new PluginDataAPI(name, this)
     this.pluginDataAPIs.set(name, api)
 
@@ -111,9 +110,6 @@ export class PluginDataService implements IPluginDataService {
   }
 
   destroyAPI(name: string): void {
-    if (!this.pluginDataAPIs.has(name)) {
-      return
-    }
     this.pluginDataAPIs.delete(name)
   }
 
@@ -121,16 +117,16 @@ export class PluginDataService implements IPluginDataService {
     return key.startsWith(CONSTANT_GLOBAL_KEY_PREFIX)
   }
 
-  private async getGlobal(key: string): Promise<unknown> {
-    return await this.storage.get(CONSTANT_GLOBAL_PREFIX, key)
+  private getGlobal(key: string): Promise<unknown> {
+    return this.storage.get(CONSTANT_GLOBAL_PREFIX, key)
   }
 
   private async setGlobal(key: string, value: unknown): Promise<void> {
-    this.storage.set(CONSTANT_GLOBAL_PREFIX, key, value)
+    await this.storage.set(CONSTANT_GLOBAL_PREFIX, key, value)
   }
 
   private async removeGlobal(key: string): Promise<void> {
-    return this.storage.remove(CONSTANT_GLOBAL_PREFIX, key)
+    await this.storage.remove(CONSTANT_GLOBAL_PREFIX, key)
   }
 
   private notifyChange(
@@ -139,7 +135,7 @@ export class PluginDataService implements IPluginDataService {
     oldValue: unknown,
     newValue?: unknown
   ): void {
-    this.eventBus.emit('plugin:data:changed', {
+    this.eventBus.emit(EVENTS.PLUGIN_DATA_CHANGED, {
       name,
       key,
       oldValue,
@@ -152,7 +148,7 @@ export class PluginDataService implements IPluginDataService {
     oldValue: unknown,
     newValue?: unknown
   ): void {
-    this.eventBus.emit('global:data:changed', {
+    this.eventBus.emit(EVENTS.GLOBAL_DATA_CHANGED, {
       key,
       oldValue,
       newValue,
