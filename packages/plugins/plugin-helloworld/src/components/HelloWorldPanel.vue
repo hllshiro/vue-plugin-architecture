@@ -116,6 +116,12 @@ const allEvents = ref<
   }>
 >([])
 
+interface message {
+  message: string
+  timestamp: number
+  name: string
+}
+
 // Get data API for storage operations
 const dataAPI = proxy?.getDataAPI()
 
@@ -127,7 +133,7 @@ const sendTestMessage = () => {
       message: messageText.value,
       timestamp: Date.now(),
       name: props.name,
-    })
+    } as message)
     messageText.value = ''
   }
 }
@@ -216,6 +222,12 @@ onMounted(async () => {
       addEvent(
         'plugin:data:changed',
         `[${payload.name}] ${payload.key}: ${payload.oldValue} -> ${payload.newValue}`
+      )
+    })
+    proxy.eventBus.on('hello-world:message', payload => {
+      addEvent(
+        'hello-world:message',
+        `[${(payload as message).name}](${(payload as message).timestamp}): ${(payload as message).message}`
       )
     })
   }
