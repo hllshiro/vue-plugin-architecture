@@ -128,65 +128,48 @@ const sendTestMessage = () => {
       timestamp: Date.now(),
       name: props.name,
     })
-
-    addEvent('message-sent', `Sent: ${messageText.value}`)
     messageText.value = ''
   }
 }
 
 const saveData = async () => {
   if (storageKey.value.trim() && storageValue.value.trim() && dataAPI) {
-    try {
-      await dataAPI.set(storageKey.value, storageValue.value)
+    await dataAPI.set(storageKey.value, storageValue.value)
 
-      // Update the stored data list
-      const existingIndex = storedData.value.findIndex(
-        item => item.key === storageKey.value
-      )
-      if (existingIndex >= 0) {
-        storedData.value[existingIndex].value = storageValue.value
-      } else {
-        storedData.value.push({
-          key: storageKey.value,
-          value: storageValue.value,
-        })
-      }
-
-      addEvent('data-save', `Saved key: ${storageKey.value}`)
-
-      // Clear inputs after successful save
-      storageKey.value = ''
-      storageValue.value = ''
-    } catch (error) {
-      addEvent('data-error', `Save failed: ${error}`)
+    // Update the stored data list
+    const existingIndex = storedData.value.findIndex(
+      item => item.key === storageKey.value
+    )
+    if (existingIndex >= 0) {
+      storedData.value[existingIndex].value = storageValue.value
+    } else {
+      storedData.value.push({
+        key: storageKey.value,
+        value: storageValue.value,
+      })
     }
+
+    // Clear inputs after successful save
+    storageKey.value = ''
+    storageValue.value = ''
   }
 }
 
 const removeData = async (key: string) => {
   if (dataAPI) {
-    try {
-      await dataAPI.remove(key)
-      storedData.value = storedData.value.filter(item => item.key !== key)
-      addEvent('data-remove', `Removed key: ${key}`)
-    } catch (error) {
-      addEvent('data-error', `Remove failed: ${error}`)
-    }
+    await dataAPI.remove(key)
+    storedData.value = storedData.value.filter(item => item.key !== key)
   }
 }
 
 const loadAllStoredData = async () => {
   if (dataAPI) {
-    try {
-      const allData = await dataAPI.getAll()
-      const data = Object.entries(allData).map(([key, value]) => ({
-        key,
-        value: String(value),
-      }))
-      storedData.value = data
-    } catch (error) {
-      console.warn('Failed to load stored data:', error)
-    }
+    const allData = await dataAPI.getAll()
+    const data = Object.entries(allData).map(([key, value]) => ({
+      key,
+      value: String(value),
+    }))
+    storedData.value = data
   }
 }
 
@@ -226,15 +209,25 @@ onMounted(async () => {
   // Load all stored data
   await loadAllStoredData()
 
-  // Add initial events
-  setTimeout(() => {
-    addEvent('plugin-loaded', 'Plugin loaded successfully')
-  }, 100)
-
   // Listen for events from other plugins or the system
   if (proxy) {
-    proxy.eventBus.on('system:ready', () => {
-      addEvent('system-ready', 'System is ready')
+    proxy.eventBus.on('plugin:loaded', payload => {
+      addEvent('plugin:loaded', payload.name)
+    })
+    proxy.eventBus.on('plugin:unloaded', payload => {
+      addEvent('plugin:unloaded', payload.name)
+    })
+    proxy.eventBus.on('global:data:changed', payload => {
+      addEvent(
+        'global:data:changed',
+        `${payload.key}: ${payload.oldValue} -> ${payload.newValue}`
+      )
+    })
+    proxy.eventBus.on('plugin:data:changed', payload => {
+      addEvent(
+        'plugin:data:changed',
+        `[${payload.name}] ${payload.key}: ${payload.oldValue} -> ${payload.newValue}`
+      )
     })
   }
 })

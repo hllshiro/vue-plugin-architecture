@@ -40,7 +40,19 @@ export class PluginDataService implements IPluginDataService {
   }
 
   async remove(name: string, key: string): Promise<void> {
-    return await this.storage.remove(name, key)
+    try {
+      const oldValue = await this.get(name, key)
+      await this.storage.remove(name, key)
+      // 通知插件数据变更
+      this.notifyChange(name, key, oldValue, 'null')
+      console.debug(`plugin data set: ${key}`)
+    } catch (error) {
+      console.error(
+        `Failed to set plugin "${name}" data for key "${key}":`,
+        error
+      )
+      throw error
+    }
   }
 
   async getAll(name: string): Promise<Record<string, unknown>> {
@@ -107,7 +119,7 @@ export class PluginDataService implements IPluginDataService {
     this.pluginDataAPIs.delete(name)
   }
 
-  notifyChange(
+  private notifyChange(
     name: string,
     key: string,
     oldValue: unknown,
@@ -121,7 +133,11 @@ export class PluginDataService implements IPluginDataService {
     })
   }
 
-  notifyGlobalChange(key: string, oldValue: unknown, newValue: unknown): void {
+  private notifyGlobalChange(
+    key: string,
+    oldValue: unknown,
+    newValue: unknown
+  ): void {
     this.eventBus.emit('global:data:changed', {
       key,
       oldValue,

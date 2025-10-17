@@ -327,26 +327,4 @@ export interface IPluginDataService {
    * @param name 插件ID
    */
   destroyPluginDataAPI(name: string): void
-
-  /**
-   * 通知插件数据变更
-   * @param name 插件ID
-   * @param key 数据键
-   * @param oldValue 旧值
-   * @param newValue 新值
-   */
-  notifyChange(
-    name: string,
-    key: string,
-    oldValue: unknown,
-    newValue: unknown
-  ): void
-
-  /**
-   * 通知全局数据变更
-   * @param key 数据键
-   * @param oldValue 旧值
-   * @param newValue 新值
-   */
-  notifyGlobalChange(key: string, oldValue: unknown, newValue: unknown): void
 }
