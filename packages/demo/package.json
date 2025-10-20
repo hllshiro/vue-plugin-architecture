@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --mode development",
-    "build": "vite build",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build",
     "preview": "vite preview",
     "type-check": "vue-tsc --noEmit",
     "clean": "rimraf dist"
@@ -24,6 +24,7 @@
     "@types/node": "catalog:",
     "@vitejs/plugin-vue": "catalog:",
     "@vue-plugin-arch/types": "workspace:*",
+    "cross-env": "^10.1.0",
     "javascript-obfuscator": "^4.1.1",
     "rimraf": "catalog:",
     "typescript": "catalog:",

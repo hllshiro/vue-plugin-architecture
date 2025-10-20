@@ -1,16 +1,10 @@
 import { defineConfig, loadEnv, UserConfig } from 'vite'
 import path from 'path'
-import { cpus } from 'os'
 import vue from '@vitejs/plugin-vue'
 import Inspect from 'vite-plugin-inspect'
 import { vuePluginArch } from '@vue-plugin-arch/vite-plugin'
 import vitePluginBundleObfuscator from 'vite-plugin-bundle-obfuscator'
 import type { ObfuscatorOptions } from 'javascript-obfuscator'
-
-// 获取CPU核心数，设置线程池大小为核心数-1
-const cpuCores = cpus().length
-const threadPoolSize = Math.max(1, cpuCores - 1)
-console.log(`CPU cores: ${cpuCores}, Thread pool size: ${threadPoolSize}`)
 
 const allObfuscatorConfig = {
   excludes: [],
@@ -20,10 +14,7 @@ const allObfuscatorConfig = {
     enable: true,
     manualChunks: ['vue-router', 'vue-i18n', 'vue'],
   },
-  threadPool: {
-    enable: true,
-    size: threadPoolSize,
-  },
+  threadPool: false, // close to avoid memory error
   options: {
     compact: true,
     controlFlowFlattening: true,
