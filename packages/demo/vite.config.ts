@@ -67,7 +67,7 @@ export default defineConfig(({ mode }): UserConfig => {
   ]
 
   const env = loadEnv(mode, process.cwd())
-  const debug = env.VITE_DEBUG_MODE
+  const debug = Boolean(env.VITE_DEBUG_MODE)
   if (debug) {
     plugins.push(Inspect())
   }
@@ -75,7 +75,7 @@ export default defineConfig(({ mode }): UserConfig => {
   const options: UserConfig = {
     build: {
       minify: true,
-      sourcemap: true,
+      sourcemap: debug,
       rollupOptions: {
         output: {
           compact: true,
