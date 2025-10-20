@@ -5,6 +5,9 @@ import Inspect from 'vite-plugin-inspect'
 import { vuePluginArch } from '@vue-plugin-arch/vite-plugin'
 import vitePluginBundleObfuscator from 'vite-plugin-bundle-obfuscator'
 import type { ObfuscatorOptions } from 'javascript-obfuscator'
+import Components from 'unplugin-vue-components/vite'
+import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
+import AutoImport from 'unplugin-auto-import/vite'
 
 const allObfuscatorConfig = {
   excludes: [],
@@ -54,6 +57,25 @@ export default defineConfig(({ mode }): UserConfig => {
   const plugins = [
     vue(),
     vuePluginArch(),
+    Components({
+      dirs: ['src/components'],
+      extensions: ['vue'],
+      resolvers: [
+        AntDesignVueResolver({
+          importStyle: false,
+        }),
+      ],
+      dts: 'src/components.d.ts',
+    }),
+    AutoImport({
+      imports: ['vue', 'vue-router', 'vue-i18n'],
+      dts: 'src/auto-import.d.ts',
+      eslintrc: {
+        enabled: true,
+        filepath: '../../.eslintrc-auto-import.json',
+        globalsPropValue: true, // 声明为全局变量
+      },
+    }),
     vitePluginBundleObfuscator(allObfuscatorConfig),
   ]
 

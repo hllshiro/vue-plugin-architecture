@@ -5,6 +5,16 @@ import vue from 'eslint-plugin-vue'
 import vueParser from 'vue-eslint-parser'
 import prettierConfig from 'eslint-config-prettier'
 import globals from 'globals'
+import autoImportGlobals from './.eslintrc-auto-import.json' with { type: 'json' }
+
+// 将旧版 globals 转换为 Flat Config 支持的格式
+const flatAutoImportGlobals = Object.entries(autoImportGlobals.globals).reduce(
+  (acc, [key, value]) => {
+    acc[key] = value ? 'readonly' : 'off' // Flat Config 中 globals 取值为 'readonly' | 'writable' | 'off'
+    return acc
+  },
+  {}
+)
 
 export default [
   {
@@ -104,6 +114,11 @@ export default [
       'prefer-const': 'error',
       'no-var': 'error',
       semi: ['error', 'never'], // 禁用行尾分号
+    },
+    languageOptions: {
+      globals: {
+        ...flatAutoImportGlobals,
+      },
     },
   },
 

@@ -4,13 +4,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  defineProps,
-  inject,
-  computed,
-  type Component,
-  type ShallowRef,
-} from 'vue'
+import { inject, computed, type Component, type ShallowRef } from 'vue'
 import type { ComponentRegistry } from './componentRegistry'
 import { IDockviewPanelProps } from 'dockview-vue'
 

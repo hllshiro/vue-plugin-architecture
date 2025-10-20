@@ -35,8 +35,6 @@ import {
   PluginLoader,
   PluginManifest,
 } from '@vue-plugin-arch/types'
-import { ref, onMounted, inject } from 'vue'
-import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 

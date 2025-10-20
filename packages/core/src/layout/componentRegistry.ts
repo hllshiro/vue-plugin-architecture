@@ -83,7 +83,8 @@ export class ComponentRegistry {
     modulePath: string,
     options: ComponentLoadOptions = {}
   ): void {
-    const loader: AsyncComponentLoader = () => import(modulePath)
+    const loader: AsyncComponentLoader = () =>
+      import(/* @vite-ignore */ modulePath)
     this.registerAsyncComponent(name, loader, options)
   }
 

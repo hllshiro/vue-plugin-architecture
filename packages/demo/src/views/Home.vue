@@ -62,8 +62,6 @@ import {
   themeVisualStudio,
   DockviewTheme,
 } from 'dockview-vue'
-import { inject, ref, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 
 const { t, locale } = useI18n()
 
