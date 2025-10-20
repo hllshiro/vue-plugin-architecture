@@ -15,7 +15,6 @@ import DynamicPanel from './dynamic-panel.vue'
 
 export class PluginLayoutManager implements IPluginLayoutManager {
   private dockviewApi?: DockviewApi
-  private panels = new Map<string, PanelInfo>()
   private eventBus: IEventBus
   private panelIdCounter = 0
   private componentRegistry: ComponentRegistry
@@ -68,7 +67,7 @@ export class PluginLayoutManager implements IPluginLayoutManager {
       }
 
       // 始终使用 DynamicPanel 作为包装器
-      const panel = this.dockviewApi.addPanel({
+      this.dockviewApi.addPanel({
         id: panelId,
         component: 'DynamicPanel', // 硬编码为我们的包装器组件
         title: options.title || panelId,
@@ -80,16 +79,6 @@ export class PluginLayoutManager implements IPluginLayoutManager {
         },
         position: this.getPosition(options.position),
       })
-
-      // 记录面板信息
-      const panelInfo: PanelInfo = {
-        id: panelId,
-        panel,
-        options,
-        createdAt: Date.now(),
-      }
-
-      this.panels.set(panelId, panelInfo)
 
       // 发送事件
       this.eventBus.emit('panel:registered', { panelId, options })
@@ -110,35 +99,35 @@ export class PluginLayoutManager implements IPluginLayoutManager {
       throw new Error('Dockview API not initialized')
     }
 
-    const panelInfo = this.panels.get(panelId)
-    if (!panelInfo) {
-      throw new Error(`Panel ${panelId} not found`)
-    }
-
     try {
-      const panel = panelInfo.panel
-      this.dockviewApi.removePanel(panel)
-      this.panels.delete(panelId)
-      this.eventBus.emit('panel:removed', { panelId })
+      const panel = this.dockviewApi.getPanel(panelId)
+      if (panel) {
+        this.dockviewApi.removePanel(panel)
+      }
     } catch (error) {
+      // 如果是其他类型的错误，仍然抛出
       throw new Error(
         `Failed to remove panel ${panelId}: ${(error as Error).message}`
       )
     }
+
+    this.eventBus.emit('panel:removed', { panelId })
   }
 
   /**
    * 更新面板
    */
   updatePanel(panelId: string, options: Partial<PanelOptions>): void {
-    const panelInfo = this.panels.get(panelId)
-    if (!panelInfo) {
+    if (!this.dockviewApi) {
+      throw new Error('Dockview API not initialized')
+    }
+
+    const panel = this.dockviewApi.getPanel(panelId)
+    if (!panel) {
       throw new Error(`Panel ${panelId} not found`)
     }
 
     try {
-      const panel = panelInfo.panel
-
       if (options.title !== undefined) {
         panel.setTitle(options.title)
       }
@@ -147,8 +136,6 @@ export class PluginLayoutManager implements IPluginLayoutManager {
         panel.api.updateParameters(options.params)
       }
 
-      // 更新记录
-      panelInfo.options = { ...panelInfo.options, ...options }
       this.eventBus.emit('panel:updated', { panelId, options })
     } catch (error) {
       throw new Error(
@@ -161,21 +148,47 @@ export class PluginLayoutManager implements IPluginLayoutManager {
    * 获取面板信息
    */
   getPanel(panelId: string): PanelInfo | undefined {
-    return this.panels.get(panelId)
+    if (!this.dockviewApi) return undefined
+
+    const panel = this.dockviewApi.getPanel(panelId)
+    if (!panel) return undefined
+
+    return {
+      id: panelId,
+      panel,
+      options: {
+        id: panelId,
+        component: panel.api.getParameters()?.componentName || '',
+        title: panel.title,
+        params: panel.api.getParameters()?.componentProps || {},
+      },
+    }
   }
 
   /**
    * 获取所有面板
    */
   getAllPanels(): PanelInfo[] {
-    return Array.from(this.panels.values())
+    if (!this.dockviewApi) return []
+
+    return this.dockviewApi.panels.map(panel => ({
+      id: panel.id,
+      panel,
+      options: {
+        id: panel.id,
+        component: panel.api.getParameters()?.componentName || '',
+        title: panel.title,
+        params: panel.api.getParameters()?.componentProps || {},
+      },
+    }))
   }
 
   /**
    * 检查面板是否存在
    */
   hasPanel(panelId: string): boolean {
-    return this.panels.has(panelId)
+    if (!this.dockviewApi) return false
+    return this.dockviewApi.getPanel(panelId) !== undefined
   }
 
   /**
@@ -240,7 +253,7 @@ export class PluginLayoutManager implements IPluginLayoutManager {
       }
 
       // 使用 DynamicPanel 作为包装器
-      const panel = this.dockviewApi.addPanel({
+      this.dockviewApi.addPanel({
         id: panelId,
         component: 'DynamicPanel',
         title: options.title || panelId,
@@ -252,19 +265,6 @@ export class PluginLayoutManager implements IPluginLayoutManager {
         },
         position: this.getPosition(options.position),
       })
-
-      // 记录面板信息
-      const panelInfo: PanelInfo = {
-        id: panelId,
-        panel,
-        options: {
-          ...options,
-          component: options.componentName,
-        },
-        createdAt: Date.now(),
-      }
-
-      this.panels.set(panelId, panelInfo)
 
       // 发送事件 - 构造完整的 PanelOptions 对象
       const completeOptions: PanelOptions = {
@@ -294,8 +294,12 @@ export class PluginLayoutManager implements IPluginLayoutManager {
     componentName: string,
     componentProps?: Record<string, unknown>
   ): Promise<void> {
-    const panelInfo = this.panels.get(panelId)
-    if (!panelInfo) {
+    if (!this.dockviewApi) {
+      throw new Error('Dockview API not initialized')
+    }
+
+    const panel = this.dockviewApi.getPanel(panelId)
+    if (!panel) {
       throw new Error(`Panel ${panelId} not found`)
     }
 
@@ -305,23 +309,15 @@ export class PluginLayoutManager implements IPluginLayoutManager {
         throw new Error(`Component "${componentName}" is not registered`)
       }
 
-      const panel = panelInfo.panel
-
-      // 更新面板参数
+      // 获取当前参数并更新
+      const currentParams = panel.api.getParameters() || {}
       const newParams = {
-        ...panelInfo.options.params,
+        ...currentParams,
         componentName,
         componentProps: componentProps || {},
       }
 
       panel.api.updateParameters(newParams)
-
-      // 更新记录
-      panelInfo.options = {
-        ...panelInfo.options,
-        component: componentName,
-        params: newParams,
-      }
 
       this.eventBus.emit('panel:component-updated', {
         panelId,
@@ -392,7 +388,15 @@ export class PluginLayoutManager implements IPluginLayoutManager {
   /**
    * 设置 Dockview 事件处理器
    */
-  private setupDockviewEventHandlers(): void {}
+  private setupDockviewEventHandlers(): void {
+    if (!this.dockviewApi) return
+
+    // 监听面板被用户关闭的事件
+    this.dockviewApi.onDidRemovePanel(event => {
+      const panelId = event.id
+      this.eventBus.emit('panel:removed', { panelId })
+    })
+  }
 
   /**
    * 移动面板到指定位置

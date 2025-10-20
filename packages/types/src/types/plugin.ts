@@ -36,7 +36,6 @@ export interface PanelInfo {
   id: string
   panel: IDockviewPanel
   options: PanelOptions
-  createdAt: number
 }
 
 // 面板状态接口
@@ -47,8 +46,6 @@ export interface PanelState {
   isActive: boolean
   size: { width?: number; height?: number }
   position?: PanelPosition
-  createdAt: number
-  updatedAt: number
 }
 
 // 布局快照接口
