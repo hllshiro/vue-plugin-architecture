@@ -1,0 +1,27 @@
+{
+  "title": "Hello World 插件",
+  "welcome": {
+    "message": "欢迎使用 Vue 插件架构系统！"
+  },
+  "dataStorage": {
+    "title": "数据存储演示",
+    "keyPlaceholder": "存储键",
+    "valuePlaceholder": "存储值",
+    "setButton": "设置",
+    "storedDataTitle": "已存储数据",
+    "noDataMessage": "暂无存储数据"
+  },
+  "eventCommunication": {
+    "title": "事件通信演示",
+    "messagePlaceholder": "输入要发送的消息",
+    "sendButton": "发送事件",
+    "clearButton": "清空事件",
+    "allEventsTitle": "所有事件",
+    "noEventsMessage": "暂无事件"
+  },
+  "language": {
+    "switch": "切换语言",
+    "english": "English",
+    "chinese": "中文"
+  }
+}

@@ -40,10 +40,12 @@
     "vite": "catalog:",
     "vite-plugin-dts": "catalog:",
     "vue": "catalog:",
-    "vue-tsc": "catalog:"
+    "vue-tsc": "catalog:",
+    "vue-i18n": "catalog:"
   },
   "packageManager": "pnpm@10.18.1",
   "peerDependencies": {
-    "vue": "catalog:"
+    "vue": "catalog:",
+    "vue-i18n": "catalog:"
   }
 }

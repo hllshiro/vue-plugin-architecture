@@ -1,0 +1,27 @@
+{
+  "title": "Hello World Plugin",
+  "welcome": {
+    "message": "Hello from Vue Plugin Architecture!"
+  },
+  "dataStorage": {
+    "title": "Data Storage Demo",
+    "keyPlaceholder": "Storage key",
+    "valuePlaceholder": "Storage value",
+    "setButton": "Set",
+    "storedDataTitle": "Stored Data",
+    "noDataMessage": "No data stored yet"
+  },
+  "eventCommunication": {
+    "title": "Event Communication Demo",
+    "messagePlaceholder": "Enter message to send",
+    "sendButton": "Send Event",
+    "clearButton": "Clear Events",
+    "allEventsTitle": "All Events",
+    "noEventsMessage": "No events yet"
+  },
+  "language": {
+    "switch": "Switch Language",
+    "english": "English",
+    "chinese": "中文"
+  }
+}

@@ -1,8 +1,10 @@
 <template>
   <div class="hello-world-panel">
     <div class="panel-header">
-      <h3>Hello World Plugin</h3>
-      <span class="version">v{{ version }}</span>
+      <h3>{{ t('title') }}</h3>
+      <div class="header-controls">
+        <span class="version">v{{ version }}</span>
+      </div>
     </div>
 
     <div class="panel-content">
@@ -10,27 +12,31 @@
       <div class="welcome-section">
         <div class="welcome-message">
           <span class="icon">👋</span>
-          <p>{{ welcomeMessage }}</p>
+          <p>{{ t('welcome.message') }}</p>
         </div>
       </div>
 
       <!-- Data Storage Demo -->
       <div class="demo-section">
-        <h4>Data Storage Demo</h4>
+        <h4>{{ t('dataStorage.title') }}</h4>
         <div class="storage-demo">
           <div class="storage-controls">
-            <input v-model="storageKey" type="text" placeholder="Storage key" />
+            <input
+              v-model="storageKey"
+              type="text"
+              :placeholder="t('dataStorage.keyPlaceholder')"
+            />
             <input
               v-model="storageValue"
               type="text"
-              placeholder="Storage value"
+              :placeholder="t('dataStorage.valuePlaceholder')"
             />
-            <button @click="saveData">Set</button>
+            <button @click="saveData">{{ t('dataStorage.setButton') }}</button>
           </div>
           <div class="storage-list">
-            <h6>Stored Data</h6>
+            <h6>{{ t('dataStorage.storedDataTitle') }}</h6>
             <div v-if="storedData.length === 0" class="empty-state">
-              No data stored yet
+              {{ t('dataStorage.noDataMessage') }}
             </div>
             <ul v-else>
               <li
@@ -51,21 +57,25 @@
 
       <!-- Event Communication Demo -->
       <div class="demo-section">
-        <h4>Event Communication Demo</h4>
+        <h4>{{ t('eventCommunication.title') }}</h4>
         <div class="event-demo">
           <div class="event-controls">
             <input
               v-model="messageText"
               type="text"
-              placeholder="Enter message to send"
+              :placeholder="t('eventCommunication.messagePlaceholder')"
             />
-            <button @click="sendTestMessage">Send Event</button>
-            <button class="clear-btn" @click="clearEvents">Clear Events</button>
+            <button @click="sendTestMessage">
+              {{ t('eventCommunication.sendButton') }}
+            </button>
+            <button class="clear-btn" @click="clearEvents">
+              {{ t('eventCommunication.clearButton') }}
+            </button>
           </div>
           <div class="event-log">
-            <h6>All Events</h6>
+            <h6>{{ t('eventCommunication.allEventsTitle') }}</h6>
             <div v-if="allEvents.length === 0" class="empty-state">
-              No events yet
+              {{ t('eventCommunication.noEventsMessage') }}
             </div>
             <ul v-else>
               <li v-for="event in allEvents" :key="event.id" class="event-item">
@@ -86,6 +96,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { IPluginServiceProxy } from '@vue-plugin-arch/types'
+import { useI18n } from 'vue-i18n'
+import { messages, defaultLocale } from '../locales'
+
+// Setup i18n with Composition API
+const { t, locale } = useI18n({
+  messages,
+  locale: defaultLocale,
+  fallbackLocale: 'en',
+})
 
 // Props
 interface Props {
@@ -100,7 +119,6 @@ const props = defineProps<Props>()
 const proxy = props.proxy
 
 // Reactive data
-const welcomeMessage = ref('Hello from Vue Plugin Architecture!')
 const messageText = ref('')
 const storageKey = ref('')
 const storageValue = ref('')
@@ -186,15 +204,15 @@ const formatTime = (timestamp: number) => {
 
 // Lifecycle
 onMounted(async () => {
-  // Load welcome message from storage if available
+  // Load saved locale from storage if available
   if (proxy) {
     try {
-      const savedMessage = await proxy.dataApi.get('welcomeMessage')
-      if (savedMessage) {
-        welcomeMessage.value = String(savedMessage)
+      const savedLocale = await proxy.dataApi.get('global:language')
+      if (savedLocale && (savedLocale === 'en' || savedLocale === 'zh')) {
+        locale.value = savedLocale as 'en' | 'zh'
       }
     } catch (error) {
-      console.warn('Failed to load welcome message:', error)
+      console.warn('Failed to load saved locale:', error)
     }
   }
 
@@ -259,6 +277,12 @@ onMounted(async () => {
   padding: 8px 16px;
   margin: -16px -16px 20px -16px;
   height: var(--dv-tabs-and-actions-container-height);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .panel-header h3 {
