@@ -1,5 +1,13 @@
 # @vue-plugin-arch/core
 
+## 0.1.4
+
+### Patch Changes
+
+- refactor(layout): unify panel state management with Dockview API & optimize logic
+- Updated dependencies
+  - @vue-plugin-arch/types@0.1.4
+
 ## 0.1.3
 
 ### Patch Changes

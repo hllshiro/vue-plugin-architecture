@@ -1,5 +1,14 @@
 # @vue-plugin-arch/demo
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies
+  - @vue-plugin-arch/core@0.1.4
+  - @vue-plugin-arch/plugin-helloworld@0.1.0
+  - @vue-plugin-arch/vite-plugin@0.1.1
+
 ## 0.1.3
 
 ### Patch Changes

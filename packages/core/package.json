@@ -1,6 +1,6 @@
 {
   "name": "@vue-plugin-arch/core",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Vue 插件架构系统核心包",
   "type": "module",
   "main": "./dist/index.js",
