@@ -23,9 +23,11 @@
     "@types/node": "catalog:",
     "@vitejs/plugin-vue": "catalog:",
     "@vue-plugin-arch/types": "workspace:*",
+    "javascript-obfuscator": "^4.1.1",
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
+    "vite-plugin-bundle-obfuscator": "^1.8.0",
     "vite-plugin-inspect": "^11.3.3",
     "vue-tsc": "catalog:"
   },
