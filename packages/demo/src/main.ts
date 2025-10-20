@@ -5,6 +5,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import { MemoryPluginStorage } from './storage'
 import { createPluginManager } from '@vue-plugin-arch/core'
+import i18n from './i18n'
 
 const app = createApp(App)
 
@@ -18,4 +19,8 @@ const pluginManager = createPluginManager(app, storage)
 
 // 将插件管理器提供给整个应用
 app.provide('pluginManager', pluginManager)
+
+// 使用 i18n
+app.use(i18n)
+
 app.mount('#app')

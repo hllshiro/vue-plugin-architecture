@@ -18,7 +18,7 @@ const allObfuscatorConfig = {
   log: true,
   autoExcludeNodeModules: {
     enable: true,
-    manualChunks: ['vue-router', 'vue'],
+    manualChunks: ['vue-router', 'vue-i18n', 'vue'],
   },
   threadPool: {
     enable: true,

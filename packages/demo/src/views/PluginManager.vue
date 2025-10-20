@@ -1,6 +1,6 @@
 <template>
   <div class="plugin-manager">
-    <h2>插件管理</h2>
+    <h2>{{ t('pluginManager.title') }}</h2>
 
     <div class="plugin-list">
       <div v-for="plugin in plugins" :key="plugin.name" class="plugin-item">
@@ -17,14 +17,14 @@
             :disabled="plugin.loading"
             @click="togglePlugin(plugin)"
           >
-            {{ plugin.loading ? '处理中...' : plugin.loaded ? '卸载' : '加载' }}
+            {{ getButtonText(plugin) }}
           </button>
         </div>
       </div>
     </div>
 
     <div v-if="plugins.length === 0" class="empty-state">
-      <p>暂无可用插件</p>
+      <p>{{ t('pluginManager.emptyState') }}</p>
     </div>
   </div>
 </template>
@@ -36,6 +36,9 @@ import {
   PluginManifest,
 } from '@vue-plugin-arch/types'
 import { ref, onMounted, inject } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface UIPlugin extends PluginManifest {
   loaded: boolean
@@ -44,6 +47,15 @@ interface UIPlugin extends PluginManifest {
 
 const pluginManager = inject<IPluginManager>('pluginManager')!
 const plugins = ref<UIPlugin[]>([])
+
+const getButtonText = (plugin: UIPlugin): string => {
+  if (plugin.loading) {
+    return t('pluginManager.actions.loading')
+  }
+  return plugin.loaded
+    ? t('pluginManager.actions.unload')
+    : t('pluginManager.actions.load')
+}
 
 const togglePlugin = async (plugin: UIPlugin) => {
   if (plugin.loading) return // Prevent multiple clicks
@@ -59,7 +71,9 @@ const togglePlugin = async (plugin: UIPlugin) => {
     plugin.loaded = pluginManager.isPluginLoaded(plugin.name)
   } catch (e) {
     console.error(`Error toggling plugin ${plugin.name}:`, e)
-    alert(`操作插件失败: ${(e as Error).message}`)
+    alert(
+      `${t('pluginManager.error.operationFailed')}: ${(e as Error).message}`
+    )
   } finally {
     plugin.loading = false // Reset loading state
   }

@@ -1,29 +1,55 @@
 <template>
   <div class="home">
-    <h2>欢迎使用 Vue 插件架构系统</h2>
+    <h2>{{ t('home.title') }}</h2>
 
-    <div class="theme-selector">
-      <label for="theme-select">切换主题：</label>
-      <select id="theme-select" v-model="selectedTheme" @change="onThemeChange">
-        <option v-for="(theme, index) in themes" :key="index" :value="index">
-          {{ getThemeName(theme) }}
-        </option>
-      </select>
+    <div class="controls-panel">
+      <div class="control-group">
+        <span class="control-label">{{
+          t('home.languageSelector.label')
+        }}</span>
+        <div class="button-group">
+          <button
+            v-for="lang in languages"
+            :key="lang.value"
+            class="control-btn"
+            :class="{ active: selectedLanguage === lang.value }"
+            @click="switchLanguage(lang.value)"
+          >
+            {{ lang.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">{{ t('home.themeSelector.label') }}</span>
+        <div class="button-group theme-buttons">
+          <button
+            v-for="(theme, index) in themeConfig"
+            :key="theme.className"
+            class="control-btn theme-btn"
+            :class="{ active: selectedTheme === index }"
+            @click="switchTheme(index)"
+          >
+            {{ theme.name }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="intro">
-      <p>这是一个基于 Vue 3 + TypeScript + Vite 的插件化架构系统演示应用。</p>
-      <p>系统特性：</p>
+      <p>{{ t('home.intro.description') }}</p>
+      <p>{{ t('home.intro.features') }}</p>
       <ul>
-        <li>动态插件加载和卸载</li>
-        <li>Dockview 面板集成</li>
-        <li>插件间双向通信</li>
-        <li>完整的开发工具链支持</li>
-        <li>TypeScript 类型安全</li>
+        <li>{{ t('home.intro.featureList.dynamicLoading') }}</li>
+        <li>{{ t('home.intro.featureList.dockviewIntegration') }}</li>
+        <li>{{ t('home.intro.featureList.communication') }}</li>
+        <li>{{ t('home.intro.featureList.devTools') }}</li>
+        <li>{{ t('home.intro.featureList.typeSafety') }}</li>
       </ul>
     </div>
   </div>
 </template>
+
 <script setup lang="ts">
 import {
   themeLight,
@@ -36,7 +62,10 @@ import {
   themeVisualStudio,
   DockviewTheme,
 } from 'dockview-vue'
-import { inject, ref } from 'vue'
+import { inject, ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t, locale } = useI18n()
 
 const themes: DockviewTheme[] = [
   themeLight,
@@ -51,25 +80,35 @@ const themes: DockviewTheme[] = [
 
 const changeTheme = inject<(t: DockviewTheme) => void>('changeTheme')
 const selectedTheme = ref(0)
+const selectedLanguage = ref(locale.value)
 
-const getThemeName = (theme: DockviewTheme): string => {
-  const themeNames = [
-    'Light',
-    'Dark',
-    'Abyss',
-    'Abyss Spaced',
-    'Light Spaced',
-    'Dracula',
-    'Replit',
-    'Visual Studio',
-  ]
-  const index = themes.indexOf(theme)
-  return themeNames[index] || 'Unknown'
+// 语言选项
+const languages = [
+  { value: 'zh-CN', label: '中文' },
+  { value: 'en-US', label: 'English' },
+]
+
+// 主题配置（包含所有主题的名称映射）
+const themeConfig = computed(() => [
+  { name: t('home.themes.light'), className: 'light' },
+  { name: t('home.themes.dark'), className: 'dark' },
+  { name: t('home.themes.abyss'), className: 'abyss' },
+  { name: t('home.themes.abyssSpaced'), className: 'abyss-spaced' },
+  { name: t('home.themes.lightSpaced'), className: 'light-spaced' },
+  { name: t('home.themes.dracula'), className: 'dracula' },
+  { name: t('home.themes.replit'), className: 'replit' },
+  { name: t('home.themes.visualStudio'), className: 'visual-studio' },
+])
+
+const switchLanguage = (lang: string) => {
+  selectedLanguage.value = lang
+  locale.value = lang
 }
 
-const onThemeChange = () => {
+const switchTheme = (themeIndex: number) => {
+  selectedTheme.value = themeIndex
   if (changeTheme) {
-    changeTheme(themes[selectedTheme.value])
+    changeTheme(themes[themeIndex])
   }
 }
 </script>
@@ -84,28 +123,112 @@ const onThemeChange = () => {
   height: 100%;
 }
 
-.theme-selector {
-  margin: 1rem 0;
-  padding: 1rem;
+.controls-panel {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
   background-color: var(--dv-tabs-and-actions-container-background-color);
   border: 1px solid var(--dv-separator-border);
-  border-radius: 6px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.theme-selector label {
-  display: inline-block;
-  margin-right: 0.5rem;
+.control-group {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.control-label {
   font-weight: 500;
   color: var(--dv-activegroup-visiblepanel-tab-color);
+  min-width: 80px;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  padding-top: 0.4rem;
 }
 
-.theme-selector select {
-  padding: 0.5rem;
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.button-group.theme-buttons {
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  max-width: 500px;
+}
+
+.control-btn {
+  padding: 0.5rem 1rem;
   border: 1px solid var(--dv-separator-border);
-  border-radius: 4px;
+  border-radius: 6px;
   background-color: var(--dv-group-view-background-color);
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 400;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.control-btn.theme-btn {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  min-width: auto;
+  border-radius: 4px;
+}
+
+.control-btn:hover {
+  background-color: var(--dv-icon-hover-background-color);
   color: var(--dv-activegroup-visiblepanel-tab-color);
-  min-width: 150px;
+}
+
+.control-btn.active {
+  background-color: var(--dv-activegroup-visiblepanel-tab-background-color);
+  color: var(--dv-activegroup-visiblepanel-tab-color);
+  border-color: var(--dv-paneview-active-outline-color);
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .control-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .control-label {
+    min-width: auto;
+    padding-top: 0;
+  }
+
+  .button-group.theme-buttons {
+    max-width: 100%;
+  }
+
+  .control-btn.theme-btn {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .controls-panel {
+    padding: 1rem;
+  }
+
+  .button-group.theme-buttons {
+    gap: 0.3rem;
+  }
+
+  .control-btn.theme-btn {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.5rem;
+  }
 }
 
 .intro {
@@ -124,30 +247,5 @@ const onThemeChange = () => {
 .intro li {
   margin: 0.5rem 0;
   color: var(--dv-inactivegroup-visiblepanel-tab-color);
-}
-
-.actions {
-  text-align: center;
-  margin: 2rem 0;
-}
-
-.btn {
-  display: inline-block;
-  padding: 0.75rem 1.5rem;
-  text-decoration: none;
-  border-radius: 4px;
-  font-weight: 500;
-  transition: all 0.2s;
-  border: 1px solid var(--dv-separator-border);
-}
-
-.btn-primary {
-  background-color: var(--dv-activegroup-visiblepanel-tab-background-color);
-  color: var(--dv-activegroup-visiblepanel-tab-color);
-}
-
-.btn-primary:hover {
-  background-color: var(--dv-icon-hover-background-color);
-  transform: translateY(-1px);
 }
 </style>

@@ -1,0 +1,44 @@
+{
+  "home": {
+    "title": "欢迎使用 Vue 插件架构系统",
+    "languageSelector": {
+      "label": "语言："
+    },
+    "themeSelector": {
+      "label": "切换主题："
+    },
+    "intro": {
+      "description": "这是一个基于 Vue 3 + TypeScript + Vite 的插件化架构系统演示应用。",
+      "features": "系统特性：",
+      "featureList": {
+        "dynamicLoading": "动态插件加载和卸载",
+        "dockviewIntegration": "Dockview 面板集成",
+        "communication": "插件间双向通信",
+        "devTools": "完整的开发工具链支持",
+        "typeSafety": "TypeScript 类型安全"
+      }
+    },
+    "themes": {
+      "light": "浅色",
+      "dark": "深色",
+      "abyss": "深渊",
+      "abyssSpaced": "深渊间距",
+      "lightSpaced": "浅色间距",
+      "dracula": "德古拉",
+      "replit": "Replit",
+      "visualStudio": "Visual Studio"
+    }
+  },
+  "pluginManager": {
+    "title": "插件管理",
+    "actions": {
+      "load": "加载",
+      "unload": "卸载",
+      "loading": "处理中..."
+    },
+    "emptyState": "暂无可用插件",
+    "error": {
+      "operationFailed": "操作插件失败"
+    }
+  }
+}

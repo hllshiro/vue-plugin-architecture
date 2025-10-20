@@ -1,0 +1,44 @@
+{
+  "home": {
+    "title": "Welcome to Vue Plugin Architecture System",
+    "languageSelector": {
+      "label": "Language:"
+    },
+    "themeSelector": {
+      "label": "Switch Theme:"
+    },
+    "intro": {
+      "description": "This is a plugin architecture system demo application based on Vue 3 + TypeScript + Vite.",
+      "features": "System Features:",
+      "featureList": {
+        "dynamicLoading": "Dynamic plugin loading and unloading",
+        "dockviewIntegration": "Dockview panel integration",
+        "communication": "Bidirectional plugin communication",
+        "devTools": "Complete development toolchain support",
+        "typeSafety": "TypeScript type safety"
+      }
+    },
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "abyss": "Abyss",
+      "abyssSpaced": "Abyss Spaced",
+      "lightSpaced": "Light Spaced",
+      "dracula": "Dracula",
+      "replit": "Replit",
+      "visualStudio": "Visual Studio"
+    }
+  },
+  "pluginManager": {
+    "title": "Plugin Manager",
+    "actions": {
+      "load": "Load",
+      "unload": "Unload",
+      "loading": "Processing..."
+    },
+    "emptyState": "No plugins available",
+    "error": {
+      "operationFailed": "Plugin operation failed"
+    }
+  }
+}
