@@ -1,103 +1,89 @@
-# PluginDataService 模块分析
+# 插件数据服务 (PluginDataService)
 
-本文档分析了 `@layout-plugin-loader/core` 包中的 `PluginDataService` 模块。
+插件数据服务是一个为插件设计的、带作用域的键值(Key-Value)存储系统。它使得插件可以方便地持久化自己的配置和状态，并在不同插件间安全地共享数据。
 
-## 模块图 (Mermaid)
+## 设计思想
 
-下图描述了 `PluginDataService` 的核心构成和依赖关系。
+该服务的设计遵循以下几个核心原则：
 
-```mermaid
-graph TD
-    subgraph "Core"
-        A[PluginDataService]
-        B(PluginDataAPI)
-        C{IPluginDataService}
-        D{IPluginDataAPI}
-    end
+1.  **存储无关性**: `PluginDataService` 本身不负责数据的物理存储。它通过一个标准的 `IPluginStorage` 接口与一个可插拔的“存储适配器”进行交互。这意味着底层存储可以是 `localStorage`、`sessionStorage`、`IndexDB`，甚至是远程服务器，而数据服务的上层API保持不变。
 
-    subgraph "Dependencies"
-        E(IEventBus)
-        F(IPluginStorage)
-    end
+2.  **作用域隔离**: 为了防止不同插件之间的数据键名冲突，服务会自动为每个插件的数据操作限定在一个默认的作用域内（通常是插件的包名）。
 
-    subgraph "Plugin"
-        G["Plugin Code"]
-    end
+3.  **全局共享**: 除了插件的私有作用域，系统还提供了一个特殊的 `'global'` 作用域。存放在此作用域内的数据可以被任何插件读取和写入，是实现插件间数据共享的标准方式。
 
-    A -- "implements" --> C
-    A -- "creates" --> B
-    B -- "implements" --> D
+4.  **变更通知**: 每当数据发生变化（通过 `set` 或 `remove`），服务都会在全局事件总线上发布一个 `data:changed` 事件。这使得应用的其他部分（例如UI组件）可以监听并响应数据的变化，实现UI的自动更新。
 
-    A -- "depends on" --> E
-    A -- "depends on" --> F
+## 核心组件
 
-    B -- "uses" --> A
-    B -- "uses" --> E
+### `IPluginStorage` (存储适配器接口)
 
-    G -- "interacts with" --> D
+这是一个需要由主应用（Host Application）实现的接口，定义了数据持久化的基本操作。`demo` 应用中提供了一个 `MemoryPluginStorage` 作为示例。
 
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style B fill:#ccf,stroke:#333,stroke-width:2px
+```typescript
+// @vue-plugin-arch/types/src/types/plugin.ts
+export interface IPluginStorage {
+  set(name: string, key: string, value: unknown): Promise<void>
+  get(name: string, key: string): Promise<unknown>
+  getAll(name: string): Promise<Record<string, unknown>>
+  remove(name: string, key: string): Promise<void>
+  // ...
+}
 ```
 
-**模块说明:**
+### `PluginDataService` (核心服务)
 
-- **`PluginDataService`**: 核心服务，负责管理所有插件的数据。它依赖 `IEventBus` 来发送数据变更通知，依赖 `IPluginStorage` 来持久化插件数据。
-- **`PluginDataAPI`**: 为每个插件创建的独立 API 实例。它作为 `PluginDataService` 的代理，使插件只能访问自身的数据，确保了数据的隔离性。
-- **`IEventBus`**: 事件总线，用于在系统不同部分之间解耦通信。在这里，它主要用于广播数据变更事件。
-- **`IPluginStorage`**: 存储接口，定义了插件数据的存取方法。具体的实现（如 `MemoryPluginStorage`）可以被注入到 `PluginDataService` 中。
-- **`Plugin Code`**: 插件的业务代码，通过 `PluginDataAPI` 与数据服务进行交互。
+该服务在内部管理着对 `IPluginStorage` 的调用，并处理作用域逻辑和事件发布。它不会直接暴露给插件。
 
----
+### `PluginDataAPI` (插件API代理)
 
-## 流程图 (Mermaid)
+这是最终提供给每个插件的API接口。当 `PluginManager` 初始化一个插件时，它会创建一个 `PluginDataAPI` 的实例，该实例已经自动绑定了当前插件的名称（即默认作用域）。
 
-下图展示了插件通过 `PluginDataAPI` 设置数据并触发通知的核心流程。
+## API 使用方法
 
-```mermaid
-flowchart TD
-    subgraph "Plugin Scope"
-        A["Plugin calls `pluginDataApi.set(key, value)`"]
-    end
+插件通过注入的 `proxy.dataApi` 来使用数据服务。
 
-    subgraph "Data Service Scope"
-        B["PluginDataAPI receives call"]
-        C["Forwards call to `PluginDataService.set(pluginName, key, value)`"]
-        D{"Try...Catch Block"}
-        E["Get old value: `storage.get(pluginName, key)`"]
-        F["Set new value: `storage.set(pluginName, key, value)`"]
-        G["Notify change: `eventBus.emit('plugin:data:changed', ..., pluginName)`"]
-        H["Success"]
-        I["Log error and throw"]
-    end
+### 1. 读写插件私有数据
 
-    subgraph "Event Bus Scope"
-        J["EventBus broadcasts event"]
-        K["Other parts of the system listen and react"]
-    end
+默认情况下，所有操作都在插件自己的作用域内。
 
-    A --> B
-    B --> C
-    C --> D
-    D -- Success --> E
-    E --> F
-    F --> G
-    G --> H
-    D -- Error --> I
+```typescript
+// 保存当前插件的视图模式
+await proxy.dataApi.set('viewMode', 'grid')
 
-    G --> J
-    J --> K
+// 在稍后或其他地方读取
+const savedMode = await proxy.dataApi.get('viewMode') // -> 'grid'
+
+// 删除数据
+await proxy.dataApi.remove('viewMode')
 ```
 
-**流程说明:**
+### 2. 读写全局共享数据
 
-1.  **插件调用**: 插件代码调用其专属的 `pluginDataApi.set()` 方法来存储或更新数据。
-2.  **API 转发**: `PluginDataAPI` 实例接收到调用，并将请求转发给核心的 `PluginDataService`，同时附加上插件自身的名称 (`pluginName`) 以作区分。
-3.  **数据处理**:
-    - `PluginDataService` 在一个 `try...catch` 块中执行操作以确保健壮性。
-    - 它首先从 `storage` 中获取旧值，以便后续通知时可以提供。
-    - 然后，它调用 `storage.set()` 将新值持久化。
-    - 如果操作成功，它会调用 `notifyChange()` 方法。
-4.  **发布事件**: `notifyChange()` 方法通过 `eventBus` 发布一个 `plugin:data:changed` 事件，并将插件名称、键、旧值和新值作为负载，同时将插件名称作为 `scope` 参数传递，以实现精确的事件通知。
-5.  **事件广播**: `EventBus` 将此事件广播给所有订阅了该事件的监听器，从而实现对数据变更的响应。
-6.  **错误处理**: 如果在存储过程中发生任何错误，`catch` 块会捕获异常，记录错误信息，然后将异常向上抛出。
+通过 `global:` 前缀来访问全局作用域。
+
+```typescript
+// 插件A：设置全局主题
+await proxy.dataApi.set('global:theme', 'dark')
+
+// 插件B：读取全局主题
+const currentTheme = await proxy.dataApi.get('global:theme') // -> 'dark'
+```
+
+### 3. 监听数据变化
+
+通过事件总线监听 `data:changed` 事件，可以响应任意作用域内的数据变更。
+
+```typescript
+// 监听全局主题的变化
+proxy.eventApi.on('data:changed', event => {
+  // event: { name: string, key: string, oldValue: any, newValue: any }
+  if (event.name === 'global' && event.key === 'global:theme') {
+    console.log(`Theme changed from ${event.oldValue} to ${event.newValue}`)
+    // 更新UI...
+  }
+})
+
+// 别忘了在 teardown 中清理监听
+// proxy.eventApi.off('data:changed', ...);
+```
