@@ -7,7 +7,14 @@ import { scanAllPlugins, ScannedPlugin } from './scanner'
 import type { PluginRegistryManifest } from '@vue-plugin-arch/types'
 
 // Export scanner functions for testing
-export { scanAllPlugins } from './scanner'
+export {
+  scanAllPlugins,
+  discoverLocalPlugins,
+  findWorkspaceRoot,
+  convertLocalPathToFsUrl,
+  convertPluginDistToFsUrl,
+  validateAndConvertPluginUrl,
+} from './scanner'
 export type { ScannedPlugin } from './scanner'
 
 const REGISTRY_ENDPOINT = '/api/plugin-registry'

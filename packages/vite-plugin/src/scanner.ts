@@ -3,6 +3,57 @@ import { existsSync } from 'fs'
 import { resolve as pathResolve, join } from 'path'
 import type { PluginManifest } from '@vue-plugin-arch/types'
 
+/**
+ * Utility functions for converting local paths to /@fs/ URLs
+ */
+
+/**
+ * Converts a local file system path to a /@fs/ URL for Vite dev server
+ * @param localPath - The absolute local file system path
+ * @returns The /@fs/ URL that can be used for dynamic imports in Vite dev server
+ */
+export function convertLocalPathToFsUrl(localPath: string): string {
+  // Normalize path separators for cross-platform compatibility
+  const normalizedPath = localPath.replace(/\\/g, '/')
+  return `/@fs/${normalizedPath}`
+}
+
+/**
+ * Converts a plugin's dist file path to a /@fs/ URL
+ * @param pluginDir - The plugin directory path
+ * @param mainEntry - The main entry point from package.json (e.g., "dist/index.js")
+ * @returns The /@fs/ URL pointing to the plugin's built file
+ */
+export function convertPluginDistToFsUrl(
+  pluginDir: string,
+  mainEntry: string
+): string {
+  const distPath = pathResolve(pluginDir, mainEntry)
+  return convertLocalPathToFsUrl(distPath)
+}
+
+/**
+ * Validates and converts a plugin's main entry to a /@fs/ URL
+ * @param pluginDir - The plugin directory path
+ * @param mainEntry - The main entry point from package.json
+ * @param pluginName - The plugin name for error messages
+ * @returns The validated /@fs/ URL
+ * @throws Error if the dist file doesn't exist or is invalid
+ */
+export async function validateAndConvertPluginUrl(
+  pluginDir: string,
+  mainEntry: string,
+  pluginName: string
+): Promise<string> {
+  const distPath = pathResolve(pluginDir, mainEntry)
+
+  // Validate the dist file exists and is accessible
+  await validatePluginDistFile(pluginName, distPath)
+
+  // Convert to /@fs/ URL
+  return convertLocalPathToFsUrl(distPath)
+}
+
 export interface ScannedPlugin {
   manifest: PluginManifest
   packageDir: string
@@ -60,33 +111,8 @@ export async function scanPluginsFromDirectory(
 ): Promise<ScannedPlugin[]> {
   const results: ScannedPlugin[] = []
 
-  // Find the workspace root by looking for pnpm-workspace.yaml or package.json with workspaces
-  let workspaceRoot = rootDir
-  let currentDir = rootDir
-
-  while (currentDir !== pathResolve(currentDir, '..')) {
-    const pnpmWorkspaceFile = join(currentDir, 'pnpm-workspace.yaml')
-    const packageJsonFile = join(currentDir, 'package.json')
-
-    if (existsSync(pnpmWorkspaceFile)) {
-      workspaceRoot = currentDir
-      break
-    }
-
-    if (existsSync(packageJsonFile)) {
-      try {
-        const packageJson = JSON.parse(await readFile(packageJsonFile, 'utf-8'))
-        if (packageJson.workspaces) {
-          workspaceRoot = currentDir
-          break
-        }
-      } catch {
-        // Continue searching
-      }
-    }
-
-    currentDir = pathResolve(currentDir, '..')
-  }
+  // Find the workspace root using utility function
+  const workspaceRoot = await findWorkspaceRoot(rootDir)
 
   const pluginsDir = pathResolve(workspaceRoot, 'packages/plugins')
 
@@ -164,6 +190,13 @@ export async function scanPluginsFromDirectory(
         // Comprehensive dist file validation
         await validatePluginDistFile(packageJsonData.name, distPath)
 
+        // Generate /@fs/ URL using utility function
+        const pluginUrl = await validateAndConvertPluginUrl(
+          pluginDir,
+          packageJsonData.main,
+          packageJsonData.name
+        )
+
         const manifest: PluginManifest = {
           displayName:
             packageJsonData.displayName ??
@@ -174,7 +207,7 @@ export async function scanPluginsFromDirectory(
           components: packageJsonData.components,
           icon: packageJsonData.icon,
           main: packageJsonData.main,
-          url: `/@fs/${distPath}`, // Use /@fs/ URL for local plugins
+          url: pluginUrl, // Use validated /@fs/ URL for local plugins
         }
 
         results.push({
@@ -223,6 +256,63 @@ export async function scanPluginsFromDirectory(
   }
 
   return results
+}
+
+/**
+ * Discovers local plugins and generates their manifests with /@fs/ URLs
+ * @param rootDir - The project root directory
+ * @returns A promise that resolves to an array of local plugin manifests
+ */
+export async function discoverLocalPlugins(
+  rootDir: string
+): Promise<PluginManifest[]> {
+  console.log(`[@vue-plugin-arch/vite-plugin] Starting local plugin discovery`)
+
+  const scannedPlugins = await scanPluginsFromDirectory(rootDir)
+  const manifests = scannedPlugins
+    .filter(plugin => plugin.isWorkspacePlugin)
+    .map(plugin => plugin.manifest)
+
+  console.log(
+    `[@vue-plugin-arch/vite-plugin] Local plugin discovery completed. ` +
+      `Found ${manifests.length} local plugins with /@fs/ URLs.`
+  )
+
+  return manifests
+}
+
+/**
+ * Gets the workspace root directory by looking for workspace configuration files
+ * @param startDir - The directory to start searching from
+ * @returns The workspace root directory path
+ */
+export async function findWorkspaceRoot(startDir: string): Promise<string> {
+  let currentDir = startDir
+
+  while (currentDir !== pathResolve(currentDir, '..')) {
+    const pnpmWorkspaceFile = join(currentDir, 'pnpm-workspace.yaml')
+    const packageJsonFile = join(currentDir, 'package.json')
+
+    if (existsSync(pnpmWorkspaceFile)) {
+      return currentDir
+    }
+
+    if (existsSync(packageJsonFile)) {
+      try {
+        const packageJson = JSON.parse(await readFile(packageJsonFile, 'utf-8'))
+        if (packageJson.workspaces) {
+          return currentDir
+        }
+      } catch {
+        // Continue searching
+      }
+    }
+
+    currentDir = pathResolve(currentDir, '..')
+  }
+
+  // If no workspace root found, return the start directory
+  return startDir
 }
 
 /**
