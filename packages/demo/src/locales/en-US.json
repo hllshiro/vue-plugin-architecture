@@ -34,11 +34,20 @@
     "actions": {
       "load": "Load",
       "unload": "Unload",
-      "loading": "Processing..."
+      "loading": "Processing...",
+      "retry": "Retry"
+    },
+    "loading": {
+      "registry": "Loading plugin registry..."
+    },
+    "labels": {
+      "local": "Local",
+      "remote": "Remote"
     },
     "emptyState": "No plugins available",
     "error": {
-      "operationFailed": "Plugin operation failed"
+      "operationFailed": "Plugin operation failed",
+      "registryFailed": "Failed to load plugin registry"
     }
   }
 }
