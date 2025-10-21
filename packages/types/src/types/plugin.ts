@@ -76,6 +76,13 @@ export interface PluginManifest {
   url: string // 插件URL，用于动态加载
 }
 
+// 插件注册表清单接口
+export interface PluginRegistryManifest {
+  plugins: PluginManifest[]
+  version: string
+  lastUpdated: string
+}
+
 // Removed PluginLoader and PluginLoaderMap - no longer needed for URL-based loading
 
 // 插件模块接口

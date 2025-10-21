@@ -1,13 +1,7 @@
-import type { PluginManifest } from '@vue-plugin-arch/types'
-
-/**
- * 插件注册表清单结构
- */
-export interface PluginRegistryManifest {
-  plugins: PluginManifest[]
-  version: string
-  lastUpdated: string
-}
+import type {
+  PluginManifest,
+  PluginRegistryManifest,
+} from '@vue-plugin-arch/types'
 
 /**
  * 示例插件注册表服务实现

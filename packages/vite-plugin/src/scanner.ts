@@ -1,8 +1,6 @@
-import { readFile, stat } from 'fs/promises'
+import { readFile, stat, readdir } from 'fs/promises'
 import { existsSync } from 'fs'
-import { resolve as pathResolve, dirname, join } from 'path'
-import resolvePackage from 'resolve'
-import { findUp } from 'find-up'
+import { resolve as pathResolve, join } from 'path'
 import type { PluginManifest } from '@vue-plugin-arch/types'
 
 export interface ScannedPlugin {
@@ -53,76 +51,89 @@ async function validatePluginDistFile(
 }
 
 /**
- * Scans package.json dependencies to find plugins.
+ * Scans plugins directory to find local plugins.
  * @param rootDir - The project root directory.
- * @param command - The current Vite command ('build' or 'serve').
  * @returns A promise that resolves to an array of plugin scan results.
  */
-export async function scanPluginsFromDependencies(
+export async function scanPluginsFromDirectory(
   rootDir: string
 ): Promise<ScannedPlugin[]> {
   const results: ScannedPlugin[] = []
-  const packageJsonPath = pathResolve(rootDir, 'package.json')
+
+  // Find the workspace root by looking for pnpm-workspace.yaml or package.json with workspaces
+  let workspaceRoot = rootDir
+  let currentDir = rootDir
+
+  while (currentDir !== pathResolve(currentDir, '..')) {
+    const pnpmWorkspaceFile = join(currentDir, 'pnpm-workspace.yaml')
+    const packageJsonFile = join(currentDir, 'package.json')
+
+    if (existsSync(pnpmWorkspaceFile)) {
+      workspaceRoot = currentDir
+      break
+    }
+
+    if (existsSync(packageJsonFile)) {
+      try {
+        const packageJson = JSON.parse(await readFile(packageJsonFile, 'utf-8'))
+        if (packageJson.workspaces) {
+          workspaceRoot = currentDir
+          break
+        }
+      } catch {
+        // Continue searching
+      }
+    }
+
+    currentDir = pathResolve(currentDir, '..')
+  }
+
+  const pluginsDir = pathResolve(workspaceRoot, 'packages/plugins')
 
   console.log(
-    `[@vue-plugin-arch/vite-plugin] Starting plugin discovery from: ${packageJsonPath}`
+    `[@vue-plugin-arch/vite-plugin] Starting plugin discovery from plugins directory: ${pluginsDir} (workspace root: ${workspaceRoot})`
   )
 
-  try {
-    const packageJsonContent = await readFile(packageJsonPath, 'utf-8')
-    const packageJson = JSON.parse(packageJsonContent)
-
-    const PluginManifests = Object.keys(packageJson.dependencies).filter(pkg =>
-      pkg.startsWith('@vue-plugin-arch/plugin-')
+  if (!existsSync(pluginsDir)) {
+    console.log(
+      `[@vue-plugin-arch/vite-plugin] Plugins directory not found: ${pluginsDir}`
     )
+    return results
+  }
+
+  try {
+    const entries = await readdir(pluginsDir, { withFileTypes: true })
+    const pluginDirs = entries
+      .filter(entry => entry.isDirectory() && entry.name.startsWith('plugin-'))
+      .map(entry => entry.name)
 
     console.log(
-      `[@vue-plugin-arch/vite-plugin] Found ${PluginManifests.length} potential plugin packages: ${PluginManifests.join(', ')}`
+      `[@vue-plugin-arch/vite-plugin] Found ${pluginDirs.length} potential plugin directories: ${pluginDirs.join(', ')}`
     )
 
-    for (const pkgName of PluginManifests) {
+    for (const pluginDirName of pluginDirs) {
+      const pluginDir = join(pluginsDir, pluginDirName)
+      const packageJsonPath = join(pluginDir, 'package.json')
+
       console.log(
-        `[@vue-plugin-arch/vite-plugin] Processing plugin: ${pkgName}`
+        `[@vue-plugin-arch/vite-plugin] Processing plugin directory: ${pluginDirName}`
       )
 
       try {
-        // 1. Resolve the package's main entry point from the project root.
-        let packageEntryPoint: string
-        try {
-          packageEntryPoint = resolvePackage.sync(pkgName, { basedir: rootDir })
-        } catch (resolveError) {
-          throw new Error(
-            `Failed to resolve plugin package "${pkgName}".\n` +
-              `This usually means the package is not installed or not accessible from the project root.\n` +
-              `Please ensure the plugin is properly installed with: npm install ${pkgName}\n` +
-              `Original error: ${resolveError instanceof Error ? resolveError.message : String(resolveError)}`
+        if (!existsSync(packageJsonPath)) {
+          console.warn(
+            `[@vue-plugin-arch/vite-plugin] Skipping "${pluginDirName}": No package.json found`
           )
+          continue
         }
-
-        // 2. Find the package.json file by searching upwards from the entry point.
-        const pkgJsonPath = await findUp('package.json', {
-          cwd: dirname(packageEntryPoint),
-        })
-        if (!pkgJsonPath) {
-          throw new Error(
-            `Could not find package.json for plugin "${pkgName}".\n` +
-              `Searched upwards from: ${dirname(packageEntryPoint)}\n` +
-              `This indicates a malformed package structure.`
-          )
-        }
-
-        const packageDir = dirname(pkgJsonPath)
-        console.log(
-          `[@vue-plugin-arch/vite-plugin] Found plugin package directory: ${packageDir}`
-        )
 
         let packageJsonData: PluginManifest
         try {
-          const pkgJsonStr = await readFile(pkgJsonPath, 'utf-8')
+          const pkgJsonStr = await readFile(packageJsonPath, 'utf-8')
           packageJsonData = JSON.parse(pkgJsonStr)
         } catch (parseError) {
           throw new Error(
-            `Failed to read or parse package.json for plugin "${pkgName}" at: ${pkgJsonPath}\n` +
+            `Failed to read or parse package.json for plugin "${pluginDirName}" at: ${packageJsonPath}\n` +
               `Error: ${parseError instanceof Error ? parseError.message : String(parseError)}\n` +
               `Please ensure the package.json file is valid JSON.`
           )
@@ -131,7 +142,7 @@ export async function scanPluginsFromDependencies(
         // Validate package.json structure
         if (!packageJsonData.main || packageJsonData.main === '') {
           console.warn(
-            `[@vue-plugin-arch/vite-plugin] Skipping plugin "${pkgName}": No valid main entry point found in package.json.\n` +
+            `[@vue-plugin-arch/vite-plugin] Skipping plugin "${pluginDirName}": No valid main entry point found in package.json.\n` +
               `Expected a "main" field pointing to the built JavaScript file (e.g., "dist/index.js").`
           )
           continue
@@ -139,19 +150,19 @@ export async function scanPluginsFromDependencies(
 
         if (!packageJsonData.name) {
           console.warn(
-            `[@vue-plugin-arch/vite-plugin] Skipping plugin "${pkgName}": Missing "name" field in package.json.`
+            `[@vue-plugin-arch/vite-plugin] Skipping plugin "${pluginDirName}": Missing "name" field in package.json.`
           )
           continue
         }
 
         // Always point to dist artifacts
-        const distPath = join(packageDir, packageJsonData.main)
+        const distPath = join(pluginDir, packageJsonData.main)
         console.log(
           `[@vue-plugin-arch/vite-plugin] Checking dist file: ${distPath}`
         )
 
         // Comprehensive dist file validation
-        await validatePluginDistFile(pkgName, distPath)
+        await validatePluginDistFile(packageJsonData.name, distPath)
 
         const manifest: PluginManifest = {
           displayName:
@@ -163,18 +174,22 @@ export async function scanPluginsFromDependencies(
           components: packageJsonData.components,
           icon: packageJsonData.icon,
           main: packageJsonData.main,
-          url: packageJsonData.name, // Temporary: will be replaced with actual URL in later tasks
+          url: `/@fs/${distPath}`, // Use /@fs/ URL for local plugins
         }
 
-        results.push({ manifest, packageDir, isWorkspacePlugin: false })
+        results.push({
+          manifest,
+          packageDir: pluginDir,
+          isWorkspacePlugin: true,
+        })
         console.log(
-          `[@vue-plugin-arch/vite-plugin] Successfully loaded plugin: ${pkgName}`
+          `[@vue-plugin-arch/vite-plugin] Successfully loaded plugin: ${packageJsonData.name}`
         )
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : String(error)
         console.error(
-          `[@vue-plugin-arch/vite-plugin] Failed to load plugin "${pkgName}":\n${errorMessage}`
+          `[@vue-plugin-arch/vite-plugin] Failed to load plugin "${pluginDirName}":\n${errorMessage}`
         )
 
         // Continue processing other plugins instead of failing completely
@@ -184,10 +199,9 @@ export async function scanPluginsFromDependencies(
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     console.error(
-      `[@vue-plugin-arch/vite-plugin] Critical error during plugin discovery:\n` +
-        `Failed to read or parse root package.json at: ${packageJsonPath}\n` +
-        `Error: ${errorMessage}\n` +
-        `Please ensure the package.json file exists and contains valid JSON.`
+      `[@vue-plugin-arch/vite-plugin] Critical error during plugin directory scan:\n` +
+        `Failed to read plugins directory at: ${pluginsDir}\n` +
+        `Error: ${errorMessage}`
     )
 
     // Return empty array instead of throwing to allow graceful degradation
@@ -195,16 +209,16 @@ export async function scanPluginsFromDependencies(
   }
 
   console.log(
-    `[@vue-plugin-arch/vite-plugin] Plugin discovery completed. Found ${results.length} valid plugins.`
+    `[@vue-plugin-arch/vite-plugin] Plugin directory scan completed. Found ${results.length} valid plugins.`
   )
 
   if (results.length === 0) {
     console.warn(
-      `[@vue-plugin-arch/vite-plugin] No valid plugins found. This could mean:\n` +
-        `  1. No plugin packages are installed (packages starting with "@vue-plugin-arch/plugin-")\n` +
+      `[@vue-plugin-arch/vite-plugin] No valid plugins found in plugins directory. This could mean:\n` +
+        `  1. No plugin directories exist in packages/plugins/\n` +
         `  2. Plugin packages are not built (missing dist files)\n` +
         `  3. Plugin packages have invalid package.json structure\n` +
-        `To resolve: Install plugin packages and ensure they are built before running the application.`
+        `To resolve: Ensure plugins are built before running the application.`
     )
   }
 
@@ -212,7 +226,7 @@ export async function scanPluginsFromDependencies(
 }
 
 /**
- * Scans for all plugins from both dependencies and workspace.
+ * Scans for all plugins from the plugins directory.
  * @param rootDir - The project root directory.
  * @returns A promise that resolves to an array of all plugin scan results.
  */
@@ -223,23 +237,12 @@ export async function scanAllPlugins(
     `[@vue-plugin-arch/vite-plugin] Starting comprehensive plugin discovery`
   )
 
-  const dependencyPlugins = await scanPluginsFromDependencies(rootDir)
-
-  // Combine results, with workspace plugins taking precedence over dependency plugins
-  // if there are name conflicts
-  const pluginMap = new Map<string, ScannedPlugin>()
-
-  // Add dependency plugins first
-  for (const plugin of dependencyPlugins) {
-    pluginMap.set(plugin.manifest.name, plugin)
-  }
-
-  const allPlugins = Array.from(pluginMap.values())
+  const directoryPlugins = await scanPluginsFromDirectory(rootDir)
 
   console.log(
     `[@vue-plugin-arch/vite-plugin] Comprehensive plugin discovery completed. ` +
-      `Found ${allPlugins.length} dependency plugins. `
+      `Found ${directoryPlugins.length} plugins from directory scan.`
   )
 
-  return allPlugins
+  return directoryPlugins
 }

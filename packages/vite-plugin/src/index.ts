@@ -1,20 +1,19 @@
-import type { Plugin, ResolvedConfig, ViteDevServer } from 'vite'
+import type { Plugin, ResolvedConfig } from 'vite'
 import { watch } from 'chokidar'
 import { resolve as pathResolve, join } from 'path'
-import { existsSync } from 'fs'
+import { existsSync, readFileSync } from 'fs'
 
 import { scanAllPlugins, ScannedPlugin } from './scanner'
+import type { PluginRegistryManifest } from '@vue-plugin-arch/types'
 
 // Export scanner functions for testing
 export { scanAllPlugins } from './scanner'
 export type { ScannedPlugin } from './scanner'
 
-const VIRTUAL_MODULE_ID = 'virtual:vue-plugin-arch/plugin-manifest'
-const RESOLVED_VIRTUAL_MODULE_ID = `\0${VIRTUAL_MODULE_ID}`
+const REGISTRY_ENDPOINT = '/api/plugin-registry'
 
 export function vuePluginArch(): Plugin {
   let config: ResolvedConfig
-  let server: ViteDevServer | undefined
   let scannedPlugins: ScannedPlugin[] | undefined
   let watcher: ReturnType<typeof watch> | undefined
 
@@ -29,19 +28,9 @@ export function vuePluginArch(): Plugin {
   function invalidateManifest() {
     // Clear cached plugins to force rescan
     scannedPlugins = undefined
-
-    if (server) {
-      // Invalidate the virtual module
-      const module = server.moduleGraph.getModuleById(
-        RESOLVED_VIRTUAL_MODULE_ID
-      )
-      if (module) {
-        server.reloadModule(module)
-        console.log(
-          `[@vue-plugin-arch/vite-plugin] Plugin manifest invalidated and reloaded`
-        )
-      }
-    }
+    console.log(
+      `[@vue-plugin-arch/vite-plugin] Plugin manifest invalidated and will be regenerated on next request`
+    )
   }
 
   function setupFileWatcher() {
@@ -49,7 +38,35 @@ export function vuePluginArch(): Plugin {
       return // Only watch in development mode
     }
 
-    const workspacePluginsDir = pathResolve(config.root, 'packages/plugins')
+    // Find the workspace root by looking for pnpm-workspace.yaml or package.json with workspaces
+    let workspaceRoot = config.root
+    let currentDir = config.root
+
+    while (currentDir !== pathResolve(currentDir, '..')) {
+      const pnpmWorkspaceFile = join(currentDir, 'pnpm-workspace.yaml')
+      const packageJsonFile = join(currentDir, 'package.json')
+
+      if (existsSync(pnpmWorkspaceFile)) {
+        workspaceRoot = currentDir
+        break
+      }
+
+      if (existsSync(packageJsonFile)) {
+        try {
+          const packageJson = JSON.parse(readFileSync(packageJsonFile, 'utf-8'))
+          if (packageJson.workspaces) {
+            workspaceRoot = currentDir
+            break
+          }
+        } catch {
+          // Continue searching
+        }
+      }
+
+      currentDir = pathResolve(currentDir, '..')
+    }
+
+    const workspacePluginsDir = pathResolve(workspaceRoot, 'packages/plugins')
 
     if (!existsSync(workspacePluginsDir)) {
       console.log(
@@ -140,8 +157,48 @@ export function vuePluginArch(): Plugin {
     },
 
     configureServer(devServer) {
-      server = devServer
       setupFileWatcher()
+
+      // Intercept registry endpoint requests
+      devServer.middlewares.use(REGISTRY_ENDPOINT, async (req, res, next) => {
+        if (req.method !== 'GET') {
+          return next()
+        }
+
+        try {
+          console.log(
+            `[@vue-plugin-arch/vite-plugin] Serving plugin registry from ${REGISTRY_ENDPOINT}`
+          )
+
+          const plugins = await getScannedPlugins()
+
+          // Convert ScannedPlugin[] to PluginManifest[] for the registry response
+          const manifests = plugins.map(plugin => plugin.manifest)
+
+          const registryResponse: PluginRegistryManifest = {
+            plugins: manifests,
+            version: '1.0.0',
+            lastUpdated: new Date().toISOString(),
+          }
+
+          res.setHeader('Content-Type', 'application/json')
+          res.setHeader('Cache-Control', 'no-cache')
+          res.end(JSON.stringify(registryResponse, null, 2))
+        } catch (error) {
+          console.error(
+            `[@vue-plugin-arch/vite-plugin] Failed to serve plugin registry:`,
+            error
+          )
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
+          const errorResponse: PluginRegistryManifest = {
+            plugins: [],
+            version: '1.0.0',
+            lastUpdated: new Date().toISOString(),
+          }
+          res.end(JSON.stringify(errorResponse))
+        }
+      })
     },
 
     buildEnd() {
@@ -149,55 +206,6 @@ export function vuePluginArch(): Plugin {
       if (watcher) {
         watcher.close()
         watcher = undefined
-      }
-    },
-
-    resolveId(id) {
-      if (id === VIRTUAL_MODULE_ID) {
-        return RESOLVED_VIRTUAL_MODULE_ID
-      }
-    },
-
-    async load(id) {
-      if (id === RESOLVED_VIRTUAL_MODULE_ID) {
-        console.log(
-          `[@vue-plugin-arch/vite-plugin] Generating virtual module for command: ${config.command}`
-        )
-        try {
-          const plugins = await getScannedPlugins()
-
-          // Generate the manifest map with lazy import functions
-          const manifestEntries = plugins
-            .map(plugin => {
-              const packageName = plugin.manifest.name
-              return `  '${packageName}': {
-    loader: () => import('${packageName}'),
-    manifest: ${JSON.stringify(plugin.manifest)}
-  }`
-            })
-            .join(',\n')
-
-          const manifestCode = `// virtual:vue-plugin-arch/plugin-manifest
-export default {
-${manifestEntries}
-};`
-
-          console.log(
-            `[@vue-plugin-arch/vite-plugin] Generated manifest for ${plugins.length} plugins`
-          )
-
-          return manifestCode
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error)
-          console.error(
-            `[@vue-plugin-arch/vite-plugin] Failed to generate virtual module for plugin manifest:\n${errorMessage}\n` +
-              `Returning empty manifest.`
-          )
-
-          // Return empty manifest to prevent build failure
-          return `export default {}`
-        }
       }
     },
   }
