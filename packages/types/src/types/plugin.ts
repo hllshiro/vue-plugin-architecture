@@ -64,7 +64,7 @@ export interface PluginComponent {
   icon?: string // 面板图标
 }
 
-// 插件清单接口 - 来源 package.json
+// 插件清单接口 - 支持URL-based加载
 export interface PluginManifest {
   name: string // 包名，唯一
   version: string // 插件版本
@@ -73,17 +73,10 @@ export interface PluginManifest {
   displayName?: string // 通过id生成（删除固定头）
   components?: PluginComponent[] // 组件列表
   icon?: string // 插件图标
+  url: string // 插件URL，用于动态加载
 }
 
-export interface PluginLoader {
-  loader: () => Promise<PluginModule>
-  manifest: PluginManifest
-}
-
-// Plugin manifest map for virtual module
-export interface PluginLoaderMap {
-  [packageName: string]: PluginLoader
-}
+// Removed PluginLoader and PluginLoaderMap - no longer needed for URL-based loading
 
 // 插件模块接口
 export interface PluginModule {
@@ -106,7 +99,7 @@ export interface IPluginManager {
   readonly layoutManager: IPluginLayoutManager
   readonly eventBus: IEventBus
 
-  loadPlugin(packageName: string): Promise<void>
+  loadPlugin(manifest: PluginManifest): Promise<void>
   unloadPlugin(name: string): Promise<void>
   getLoadedPlugins(): PluginInfo[]
   isPluginLoaded(name: string): boolean

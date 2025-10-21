@@ -8,8 +8,8 @@ import type {
   IPluginLayoutManager,
   IPluginStorage,
   IPluginDataService,
-  PluginLoaderMap,
   PluginModule,
+  PluginManifest,
 } from '@vue-plugin-arch/types'
 
 import { PluginStateManager } from './pluginStateManager'
@@ -29,7 +29,6 @@ export class PluginManager implements IPluginManager {
   private stateManager: PluginStateManager
   private storage: IPluginStorage
   private loadingPromises = new Map<string, Promise<void>>()
-  private pluginManifest: PluginLoaderMap | null = null
 
   constructor(app: App, storage: IPluginStorage) {
     this.eventBus = globalEventBus
@@ -46,69 +45,55 @@ export class PluginManager implements IPluginManager {
     // Event handlers can be set up here if needed
   }
 
-  private async loadPluginManifest(): Promise<PluginLoaderMap> {
-    if (!this.pluginManifest) {
-      try {
-        // Use dynamic import with string to avoid build-time resolution
-        const manifestModule = await import(
-          'virtual:vue-plugin-arch/plugin-manifest'
-        )
-        this.pluginManifest = manifestModule.default
-      } catch (error) {
-        console.error('Failed to load plugin manifest:', error)
-        throw new Error(
-          'Plugin manifest not available. Make sure the vite-plugin is properly configured.'
-        )
-      }
-    }
-    return this.pluginManifest!
-  }
+  // loadPluginManifest method removed - no longer needed for URL-based loading
 
-  async loadPlugin(packageName: string): Promise<void> {
+  async loadPlugin(manifest: PluginManifest): Promise<void> {
+    const pluginName = manifest.name
     try {
-      if (this.loadingPromises.has(packageName)) {
-        return this.loadingPromises.get(packageName)!
+      if (this.loadingPromises.has(pluginName)) {
+        return this.loadingPromises.get(pluginName)!
       }
 
-      const loadPromise = this.doLoadPlugin(packageName)
-      this.loadingPromises.set(packageName, loadPromise)
+      const loadPromise = this.doLoadPlugin(manifest)
+      this.loadingPromises.set(pluginName, loadPromise)
 
       try {
         await loadPromise
       } finally {
-        this.loadingPromises.delete(packageName)
+        this.loadingPromises.delete(pluginName)
       }
     } catch (error) {
-      this.handlePluginError(packageName, error as Error, 'load')
+      this.handlePluginError(pluginName, error as Error, 'load')
       throw error
     }
   }
 
-  private async doLoadPlugin(packageName: string): Promise<void> {
-    console.info(`Loading plugin: ${packageName}`)
+  private async doLoadPlugin(manifest: PluginManifest): Promise<void> {
+    const pluginName = manifest.name
+    console.info(`Loading plugin: ${pluginName}`)
 
     try {
-      const plugin = await this.importPluginModule(packageName)
+      const plugin = await this.importPluginModule(manifest)
 
-      this.stateManager.createInitialState(packageName, plugin.manifest)
+      this.stateManager.createInitialState(pluginName, plugin.manifest)
 
       // The host application is responsible for fetching the manifest
       // and loading plugins in an order that respects dependencies.
-      const api = await this.installPlugin(packageName, plugin.module)
+      const api = await this.installPlugin(pluginName, plugin.module)
 
-      this.stateManager.updateState(packageName, {
+      this.stateManager.updateState(pluginName, {
         status: 'loaded',
         api,
         loadedAt: Date.now(),
       })
 
-      console.info(`Plugin ${packageName} loaded successfully`)
+      console.info(`Plugin ${pluginName} loaded successfully`)
       this.eventBus.emit('plugin:loaded', {
-        name: packageName,
+        name: pluginName,
         manifest: plugin.manifest,
       })
     } catch (error) {
-      this.stateManager.updateState(packageName, {
+      this.stateManager.updateState(pluginName, {
         status: 'error',
         error: error as Error,
       })
@@ -116,39 +101,30 @@ export class PluginManager implements IPluginManager {
     }
   }
 
-  private async importPluginModule(packageName: string): Promise<Plugin> {
+  private async importPluginModule(manifest: PluginManifest): Promise<Plugin> {
+    const pluginName = manifest.name
     try {
-      const manifest = await this.loadPluginManifest()
-      const loader = manifest[packageName]
-      const importFn = loader.loader
-
-      if (!importFn) {
-        throw new PluginError(
-          packageName,
-          `Plugin not found in manifest. Make sure "${packageName}" is installed as a dependency.`
-        )
-      }
-
-      const module = await importFn()
+      // Use dynamic import with the URL from the manifest
+      const module = await import(/* @vite-ignore */ manifest.url)
 
       if (!module || typeof module.install !== 'function') {
         throw new PluginError(
-          packageName,
+          pluginName,
           "Plugin module must export an 'install' function"
         )
       }
 
       return {
-        module,
-        manifest: loader.manifest,
+        module: module.default,
+        manifest,
       }
     } catch (error) {
       if (error instanceof PluginError) {
         throw error
       }
       throw new PluginError(
-        packageName,
-        `Failed to import plugin module: ${(error as Error).message}`,
+        pluginName,
+        `Failed to import plugin module from URL ${manifest.url}: ${(error as Error).message}`,
         error as Error
       )
     }

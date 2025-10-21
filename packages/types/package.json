@@ -17,7 +17,6 @@
   },
   "scripts": {
     "build": "tsc",
-    "postbuild": "node ./scripts/postbuild.js",
     "type-check": "tsc --noEmit",
     "clean": "rimraf dist"
   },

@@ -163,6 +163,7 @@ export async function scanPluginsFromDependencies(
           components: packageJsonData.components,
           icon: packageJsonData.icon,
           main: packageJsonData.main,
+          url: packageJsonData.name, // Temporary: will be replaced with actual URL in later tasks
         }
 
         results.push({ manifest, packageDir, isWorkspacePlugin: false })

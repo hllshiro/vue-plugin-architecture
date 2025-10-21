@@ -30,11 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  IPluginManager,
-  PluginLoader,
-  PluginManifest,
-} from '@vue-plugin-arch/types'
+import { IPluginManager, PluginManifest } from '@vue-plugin-arch/types'
 
 const { t } = useI18n()
 
@@ -63,7 +59,7 @@ const togglePlugin = async (plugin: UIPlugin) => {
     if (plugin.loaded) {
       await pluginManager.unloadPlugin(plugin.name)
     } else {
-      await pluginManager.loadPlugin(plugin.name)
+      await pluginManager.loadPlugin(plugin as PluginManifest)
     }
     // Update the loaded state after the operation
     plugin.loaded = pluginManager.isPluginLoaded(plugin.name)
@@ -77,17 +73,13 @@ const togglePlugin = async (plugin: UIPlugin) => {
   }
 }
 
-import manifest from 'virtual:vue-plugin-arch/plugin-manifest'
-
+// Temporary: virtual module import removed - will be replaced with registry service in later tasks
 onMounted(() => {
   try {
-    plugins.value = Object.values(manifest).map((entry: PluginLoader) => ({
-      ...entry.manifest,
-      loaded: pluginManager.isPluginLoaded(entry.manifest.name),
-      loading: false,
-    }))
+    // Temporary empty array - will be populated by registry service in later tasks
+    plugins.value = []
   } catch (error) {
-    console.error('Could not load plugin list from virtual module:', error)
+    console.error('Could not load plugin list:', error)
     plugins.value = []
   }
 })
