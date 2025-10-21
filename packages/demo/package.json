@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@vue-plugin-arch/core": "workspace:*",
-    "@vue-plugin-arch/plugin-helloworld": "workspace:*",
     "@vue-plugin-arch/vite-plugin": "workspace:*",
     "dockview-vue": "catalog:",
     "mitt": "catalog:",
