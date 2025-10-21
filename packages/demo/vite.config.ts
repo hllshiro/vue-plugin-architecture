@@ -121,6 +121,12 @@ export default defineConfig(({ mode }): UserConfig => {
     server: {
       open: false,
       hmr: true,
+      fs: {
+        // Allow serving files from anywhere in development
+        allow: ['..', '../..', '/'],
+        // In development, allow @fs imports for testing
+        strict: false,
+      },
     },
   }
 

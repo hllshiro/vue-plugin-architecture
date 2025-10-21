@@ -26,13 +26,7 @@ export default defineConfig({
       formats: ['es', 'umd'],
     },
     rollupOptions: {
-      external: [
-        'vue',
-        'mitt',
-        'dockview-vue',
-        '@vue-plugin-arch/types',
-        'virtual:vue-plugin-arch/plugin-manifest',
-      ],
+      external: ['vue', 'mitt', 'dockview-vue', '@vue-plugin-arch/types'],
       output: {
         globals: {
           vue: 'Vue',

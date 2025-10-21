@@ -107,10 +107,11 @@ export class PluginManager implements IPluginManager {
       // Use dynamic import with the URL from the manifest
       const module = await import(/* @vite-ignore */ manifest.url)
 
-      if (!module || typeof module.install !== 'function') {
+      // Check if the module has a default export with install function
+      if (!module.default || typeof module.default.install !== 'function') {
         throw new PluginError(
           pluginName,
-          "Plugin module must export an 'install' function"
+          "Plugin module must have a default export with an 'install' function"
         )
       }
 
