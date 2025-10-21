@@ -2,6 +2,15 @@
   "name": "vue-plugin-architecture",
   "version": "0.1.1",
   "description": "Vue 3 + TypeScript 插件化架构系统",
+  "author": "hllshiro",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hllshiro/vue-plugin-architecture.git"
+  },
+  "homepage": "https://github.com/hllshiro/vue-plugin-architecture",
+  "bugs": {
+    "url": "https://github.com/hllshiro/vue-plugin-architecture/issues"
+  },
   "type": "module",
   "private": true,
   "scripts": {
