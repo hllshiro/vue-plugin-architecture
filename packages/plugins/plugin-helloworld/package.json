@@ -32,16 +32,17 @@
     "clean": "rimraf dist"
   },
   "devDependencies": {
-    "@vue-plugin-arch/types": "workspace:*",
     "@types/node": "catalog:",
     "@vitejs/plugin-vue": "catalog:",
+    "@vue-plugin-arch/types": "workspace:*",
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-dts": "catalog:",
     "vue": "catalog:",
-    "vue-tsc": "catalog:",
-    "vue-i18n": "catalog:"
+    "vue-i18n": "catalog:",
+    "vue-tsc": "catalog:"
   },
   "packageManager": "pnpm@10.18.1",
   "peerDependencies": {

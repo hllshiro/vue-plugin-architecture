@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'node:path'
 import dts from 'vite-plugin-dts'
+import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 
 export default defineConfig({
   plugins: [
@@ -15,6 +16,7 @@ export default defineConfig({
       exclude: ['**/*.test.*', '**/*.spec.*'],
       rollupTypes: true,
     }),
+    cssInjectedByJsPlugin(),
   ],
   build: {
     lib: {
@@ -30,8 +32,17 @@ export default defineConfig({
           vue: 'Vue',
           'vue-i18n': 'VueI18n',
         },
+        // Ensure proper ES module format for dynamic import
+        format: 'es',
+        // Preserve module structure for better tree-shaking
+        preserveModules: false,
       },
     },
+    // Optimize for production and dynamic loading
+    minify: 'esbuild',
+    target: 'es2020',
+    // Generate source maps for debugging
+    sourcemap: true,
   },
   resolve: {
     alias: {
