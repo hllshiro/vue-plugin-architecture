@@ -3,7 +3,7 @@ import { watch } from 'chokidar'
 import { resolve as pathResolve, join } from 'path'
 import { existsSync, readFileSync } from 'fs'
 
-import { scanAllPlugins, ScannedPlugin } from './scanner'
+import { getMergedPluginRegistry } from './scanner'
 import type { PluginRegistryManifest } from '@vue-plugin-arch/types'
 
 // Export scanner functions for testing
@@ -14,6 +14,9 @@ export {
   convertLocalPathToFsUrl,
   convertPluginDistToFsUrl,
   validateAndConvertPluginUrl,
+  readStaticRegistry,
+  mergePluginManifests,
+  getMergedPluginRegistry,
 } from './scanner'
 export type { ScannedPlugin } from './scanner'
 
@@ -21,20 +24,20 @@ const REGISTRY_ENDPOINT = '/api/plugin-registry'
 
 export function vuePluginArch(): Plugin {
   let config: ResolvedConfig
-  let scannedPlugins: ScannedPlugin[] | undefined
+  let cachedRegistry: PluginRegistryManifest | undefined
   let watcher: ReturnType<typeof watch> | undefined
 
-  async function getScannedPlugins(): Promise<ScannedPlugin[]> {
-    if (scannedPlugins) {
-      return scannedPlugins
+  async function getMergedRegistry(): Promise<PluginRegistryManifest> {
+    if (cachedRegistry) {
+      return cachedRegistry
     }
-    scannedPlugins = await scanAllPlugins(config.root)
-    return scannedPlugins
+    cachedRegistry = await getMergedPluginRegistry(config.root)
+    return cachedRegistry
   }
 
   function invalidateManifest() {
-    // Clear cached plugins to force rescan
-    scannedPlugins = undefined
+    // Clear cached registry to force rescan
+    cachedRegistry = undefined
     console.log(
       `[@vue-plugin-arch/vite-plugin] Plugin manifest invalidated and will be regenerated on next request`
     )
@@ -74,31 +77,44 @@ export function vuePluginArch(): Plugin {
     }
 
     const workspacePluginsDir = pathResolve(workspaceRoot, 'packages/plugins')
+    const staticRegistryPath = pathResolve(
+      workspaceRoot,
+      'packages/demo/public/plugin-registry.json'
+    )
 
-    if (!existsSync(workspacePluginsDir)) {
+    const watchPaths: string[] = []
+
+    // Add plugin directories to watch if they exist
+    if (existsSync(workspacePluginsDir)) {
+      watchPaths.push(
+        join(workspacePluginsDir, '*/package.json'),
+        join(workspacePluginsDir, '*/src/**/*'),
+        join(workspacePluginsDir, '*/dist/**/*')
+      )
+    }
+
+    // Add static registry file to watch if it exists
+    if (existsSync(staticRegistryPath)) {
+      watchPaths.push(staticRegistryPath)
+    }
+
+    if (watchPaths.length === 0) {
       console.log(
-        `[@vue-plugin-arch/vite-plugin] Workspace plugins directory not found, skipping file watcher setup`
+        `[@vue-plugin-arch/vite-plugin] No plugin directories or static registry found, skipping file watcher setup`
       )
       return
     }
 
     console.log(
-      `[@vue-plugin-arch/vite-plugin] Setting up file watcher for workspace plugins`
+      `[@vue-plugin-arch/vite-plugin] Setting up file watcher for workspace plugins and static registry`
     )
 
-    // Watch for changes in workspace plugin directories
-    watcher = watch(
-      [
-        join(workspacePluginsDir, '*/package.json'),
-        join(workspacePluginsDir, '*/src/**/*'),
-        join(workspacePluginsDir, '*/dist/**/*'),
-      ],
-      {
-        ignored: ['**/node_modules/**', '**/.git/**'],
-        persistent: true,
-        ignoreInitial: true,
-      }
-    )
+    // Watch for changes in workspace plugin directories and static registry
+    watcher = watch(watchPaths, {
+      ignored: ['**/node_modules/**', '**/.git/**'],
+      persistent: true,
+      ignoreInitial: true,
+    })
 
     watcher.on('add', (path: string) => {
       console.log(
@@ -115,9 +131,16 @@ export function vuePluginArch(): Plugin {
     })
 
     watcher.on('change', (path: string) => {
-      console.log(
-        `[@vue-plugin-arch/vite-plugin] Workspace plugin file changed: ${path}`
-      )
+      console.log(`[@vue-plugin-arch/vite-plugin] File changed: ${path}`)
+
+      // For static registry changes, invalidate manifest immediately
+      if (path.endsWith('plugin-registry.json')) {
+        console.log(
+          `[@vue-plugin-arch/vite-plugin] Static registry file changed, invalidating manifest`
+        )
+        invalidateManifest()
+        return
+      }
 
       // For source file changes, we need to trigger a rebuild
       if (path.includes('/src/')) {
@@ -174,19 +197,10 @@ export function vuePluginArch(): Plugin {
 
         try {
           console.log(
-            `[@vue-plugin-arch/vite-plugin] Serving plugin registry from ${REGISTRY_ENDPOINT}`
+            `[@vue-plugin-arch/vite-plugin] Serving merged plugin registry from ${REGISTRY_ENDPOINT}`
           )
 
-          const plugins = await getScannedPlugins()
-
-          // Convert ScannedPlugin[] to PluginManifest[] for the registry response
-          const manifests = plugins.map(plugin => plugin.manifest)
-
-          const registryResponse: PluginRegistryManifest = {
-            plugins: manifests,
-            version: '1.0.0',
-            lastUpdated: new Date().toISOString(),
-          }
+          const registryResponse = await getMergedRegistry()
 
           res.setHeader('Content-Type', 'application/json')
           res.setHeader('Cache-Control', 'no-cache')

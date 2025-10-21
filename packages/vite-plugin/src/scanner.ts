@@ -1,7 +1,10 @@
 import { readFile, stat, readdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import { resolve as pathResolve, join } from 'path'
-import type { PluginManifest } from '@vue-plugin-arch/types'
+import type {
+  PluginManifest,
+  PluginRegistryManifest,
+} from '@vue-plugin-arch/types'
 
 /**
  * Utility functions for converting local paths to /@fs/ URLs
@@ -313,6 +316,122 @@ export async function findWorkspaceRoot(startDir: string): Promise<string> {
 
   // If no workspace root found, return the start directory
   return startDir
+}
+
+/**
+ * Reads the static plugin registry file from the public directory
+ * @param rootDir - The project root directory
+ * @returns A promise that resolves to the static registry manifest, or null if not found
+ */
+export async function readStaticRegistry(
+  rootDir: string
+): Promise<PluginRegistryManifest | null> {
+  const workspaceRoot = await findWorkspaceRoot(rootDir)
+  const staticRegistryPath = pathResolve(
+    workspaceRoot,
+    'packages/demo/public/plugin-registry.json'
+  )
+
+  console.log(
+    `[@vue-plugin-arch/vite-plugin] Looking for static registry at: ${staticRegistryPath}`
+  )
+
+  if (!existsSync(staticRegistryPath)) {
+    console.log(
+      `[@vue-plugin-arch/vite-plugin] Static registry file not found, using empty registry`
+    )
+    return null
+  }
+
+  try {
+    const registryContent = await readFile(staticRegistryPath, 'utf-8')
+    const registry: PluginRegistryManifest = JSON.parse(registryContent)
+
+    console.log(
+      `[@vue-plugin-arch/vite-plugin] Successfully loaded static registry with ${registry.plugins.length} remote plugins`
+    )
+
+    return registry
+  } catch (error) {
+    console.error(
+      `[@vue-plugin-arch/vite-plugin] Failed to read static registry file:`,
+      error
+    )
+    return null
+  }
+}
+
+/**
+ * Merges local plugins with remote plugins from static registry
+ * Local plugins take precedence over remote plugins with the same name
+ * @param localPlugins - Array of local plugin manifests
+ * @param staticRegistry - Static registry manifest with remote plugins
+ * @returns Merged array of plugin manifests
+ */
+export function mergePluginManifests(
+  localPlugins: PluginManifest[],
+  staticRegistry: PluginRegistryManifest | null
+): PluginManifest[] {
+  const mergedPlugins: PluginManifest[] = [...localPlugins]
+  const localPluginNames = new Set(localPlugins.map(plugin => plugin.name))
+
+  if (staticRegistry && staticRegistry.plugins) {
+    for (const remotePlugin of staticRegistry.plugins) {
+      if (localPluginNames.has(remotePlugin.name)) {
+        console.log(
+          `[@vue-plugin-arch/vite-plugin] Name conflict detected: Local plugin "${remotePlugin.name}" takes precedence over remote plugin`
+        )
+        continue
+      }
+
+      mergedPlugins.push(remotePlugin)
+    }
+
+    console.log(
+      `[@vue-plugin-arch/vite-plugin] Merged ${localPlugins.length} local plugins with ${staticRegistry.plugins.length - (staticRegistry.plugins.length - (mergedPlugins.length - localPlugins.length))} remote plugins (${staticRegistry.plugins.length - (mergedPlugins.length - localPlugins.length)} conflicts resolved)`
+    )
+  } else {
+    console.log(
+      `[@vue-plugin-arch/vite-plugin] No static registry available, using only local plugins`
+    )
+  }
+
+  return mergedPlugins
+}
+
+/**
+ * Gets the merged plugin registry combining local and remote plugins
+ * @param rootDir - The project root directory
+ * @returns A promise that resolves to the complete plugin registry manifest
+ */
+export async function getMergedPluginRegistry(
+  rootDir: string
+): Promise<PluginRegistryManifest> {
+  console.log(
+    `[@vue-plugin-arch/vite-plugin] Starting merged plugin registry generation`
+  )
+
+  // Get local plugins
+  const localPlugins = await discoverLocalPlugins(rootDir)
+
+  // Read static registry
+  const staticRegistry = await readStaticRegistry(rootDir)
+
+  // Merge plugins with local taking precedence
+  const mergedPlugins = mergePluginManifests(localPlugins, staticRegistry)
+
+  const registryManifest: PluginRegistryManifest = {
+    plugins: mergedPlugins,
+    version: staticRegistry?.version || '1.0.0',
+    lastUpdated: new Date().toISOString(),
+  }
+
+  console.log(
+    `[@vue-plugin-arch/vite-plugin] Merged plugin registry completed. ` +
+      `Total plugins: ${mergedPlugins.length} (${localPlugins.length} local, ${mergedPlugins.length - localPlugins.length} remote)`
+  )
+
+  return registryManifest
 }
 
 /**
