@@ -2,7 +2,7 @@
   "plugins": [
     {
       "name": "@vue-plugin-arch/plugin-helloworld",
-      "version": "2.0.0",
+      "version": "0.1.0",
       "description": "Remote version of helloworld plugin (should be overridden by local)",
       "main": "dist/index.js",
       "displayName": "Remote Hello World",
@@ -16,7 +16,7 @@
         }
       ],
       "icon": "🌍",
-      "url": "https://example.com/plugins/remote-helloworld/dist/index.js"
+      "url": "http://localhost:4173/plugins/helloworld/dist/index.js"
     },
     {
       "name": "@example/remote-plugin-1",

@@ -6,6 +6,8 @@ import type {
   PluginRegistryManifest,
 } from '@vue-plugin-arch/types'
 
+export const STATIC_PATH = 'packages/demo/public/api/plugin-registry.json'
+
 /**
  * Utility functions for converting local paths to /@fs/ URLs
  */
@@ -327,10 +329,7 @@ export async function readStaticRegistry(
   rootDir: string
 ): Promise<PluginRegistryManifest | null> {
   const workspaceRoot = await findWorkspaceRoot(rootDir)
-  const staticRegistryPath = pathResolve(
-    workspaceRoot,
-    'packages/demo/public/plugin-registry.json'
-  )
+  const staticRegistryPath = pathResolve(workspaceRoot, STATIC_PATH)
 
   console.log(
     `[@vue-plugin-arch/vite-plugin] Looking for static registry at: ${staticRegistryPath}`

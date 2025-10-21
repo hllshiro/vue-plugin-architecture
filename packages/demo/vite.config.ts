@@ -3,54 +3,13 @@ import path from 'path'
 import vue from '@vitejs/plugin-vue'
 import Inspect from 'vite-plugin-inspect'
 import { vuePluginArch } from '@vue-plugin-arch/vite-plugin'
-import vitePluginBundleObfuscator from 'vite-plugin-bundle-obfuscator'
-import type { ObfuscatorOptions } from 'javascript-obfuscator'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 import Components from 'unplugin-vue-components/vite'
 import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
 import AutoImport from 'unplugin-auto-import/vite'
 
-const allObfuscatorConfig = {
-  excludes: [],
-  enable: true,
-  log: true,
-  autoExcludeNodeModules: {
-    enable: true,
-    manualChunks: ['vue-router', 'vue-i18n', 'vue'],
-  },
-  threadPool: false, // close to avoid memory error
-  options: {
-    compact: true,
-    controlFlowFlattening: true,
-    controlFlowFlatteningThreshold: 1,
-    // 调试控制_start
-    deadCodeInjection: false,
-    debugProtection: false,
-    debugProtectionInterval: 0,
-    disableConsoleOutput: false,
-    // 调试控制_end
-    identifierNamesGenerator: 'hexadecimal',
-    log: false,
-    numbersToExpressions: false,
-    renameGlobals: false,
-    selfDefending: true,
-    simplify: true,
-    splitStrings: false,
-    ignoreImports: true,
-    stringArray: true,
-    stringArrayCallsTransform: true,
-    stringArrayCallsTransformThreshold: 0.5,
-    stringArrayEncoding: [],
-    stringArrayIndexShift: true,
-    stringArrayRotate: true,
-    stringArrayShuffle: true,
-    stringArrayWrappersCount: 1,
-    stringArrayWrappersChainedCalls: true,
-    stringArrayWrappersParametersMaxCount: 2,
-    stringArrayWrappersType: 'variable',
-    stringArrayThreshold: 0.75,
-    unicodeEscapeSequence: false,
-  } as ObfuscatorOptions,
-}
+// External dependencies to be copied as static assets
+const externalDeps = ['vue', 'vue-i18n']
 
 export default defineConfig(({ mode }): UserConfig => {
   console.log(`---- Mode: ${mode} ----\n`)
@@ -76,7 +35,21 @@ export default defineConfig(({ mode }): UserConfig => {
         globalsPropValue: true, // 声明为全局变量
       },
     }),
-    vitePluginBundleObfuscator(allObfuscatorConfig),
+    // Copy external dependencies as static assets
+    viteStaticCopy({
+      targets: [
+        {
+          src: 'node_modules/vue/dist/vue.global.prod.js',
+          dest: 'libs',
+          rename: 'vue.js',
+        },
+        {
+          src: 'node_modules/vue-i18n/dist/vue-i18n.global.prod.js',
+          dest: 'libs',
+          rename: 'vue-i18n.js',
+        },
+      ],
+    }),
   ]
 
   const env = loadEnv(mode, process.cwd())
@@ -90,17 +63,17 @@ export default defineConfig(({ mode }): UserConfig => {
       minify: true,
       sourcemap: debug,
       rollupOptions: {
+        external: externalDeps,
         output: {
           compact: true,
-          /* manualChunks: {
-            vue: ['vue'],
-          }, */
-          /* chunkFileNames: chunkInfo => {
-            if (chunkInfo.name === 'vue') {
-              return 'assets/vue.js' // Name the vue chunk predictably
-            }
-            return 'assets/[name]-[hash].js' // Keep hashes for other chunks
-          }, */
+          globals: {
+            vue: 'Vue',
+            'vue-i18n': 'VueI18n',
+          },
+          paths: {
+            vue: '/libs/vue.js',
+            'vue-i18n': '/libs/vue-i18n.js',
+          },
         },
       },
     },

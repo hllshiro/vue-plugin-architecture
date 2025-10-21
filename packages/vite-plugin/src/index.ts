@@ -3,24 +3,10 @@ import { watch } from 'chokidar'
 import { resolve as pathResolve, join } from 'path'
 import { existsSync, readFileSync } from 'fs'
 
-import { getMergedPluginRegistry } from './scanner'
+import { getMergedPluginRegistry, STATIC_PATH } from './scanner'
 import type { PluginRegistryManifest } from '@vue-plugin-arch/types'
 
-// Export scanner functions for testing
-export {
-  scanAllPlugins,
-  discoverLocalPlugins,
-  findWorkspaceRoot,
-  convertLocalPathToFsUrl,
-  convertPluginDistToFsUrl,
-  validateAndConvertPluginUrl,
-  readStaticRegistry,
-  mergePluginManifests,
-  getMergedPluginRegistry,
-} from './scanner'
-export type { ScannedPlugin } from './scanner'
-
-const REGISTRY_ENDPOINT = '/api/plugin-registry'
+const REGISTRY_ENDPOINT = '/api/plugin-registry.json'
 
 export function vuePluginArch(): Plugin {
   let config: ResolvedConfig
@@ -77,10 +63,7 @@ export function vuePluginArch(): Plugin {
     }
 
     const workspacePluginsDir = pathResolve(workspaceRoot, 'packages/plugins')
-    const staticRegistryPath = pathResolve(
-      workspaceRoot,
-      'packages/demo/public/plugin-registry.json'
-    )
+    const staticRegistryPath = pathResolve(workspaceRoot, STATIC_PATH)
 
     const watchPaths: string[] = []
 

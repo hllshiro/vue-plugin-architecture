@@ -13,7 +13,7 @@ export class PluginRegistryService {
   private cacheExpiry: number = 0
   private readonly cacheTimeout: number = 5 * 60 * 1000 // 5分钟缓存
 
-  constructor(registryUrl: string = '/api/plugin-registry') {
+  constructor(registryUrl: string = '/api/plugin-registry.json') {
     this.registryUrl = registryUrl
   }
 
