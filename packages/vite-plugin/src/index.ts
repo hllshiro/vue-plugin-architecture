@@ -55,7 +55,6 @@ export interface VuePluginArchOptions {
   build: {
     copyPluginDist: boolean
     enableImportMap: boolean
-    importMapPlaceholder: string
   }
 }
 
@@ -281,7 +280,6 @@ export function vuePluginArch(options: VuePluginArchOptions): Plugin[] {
   const staticRegistryPath = registry.staticPath
   const copyPluginDist = build.copyPluginDist
   const enableImportMap = build.enableImportMap
-  const importMapPlaceholder = build.importMapPlaceholder
   const pluginDistDir = 'plugins'
 
   let config: ResolvedConfig
@@ -482,12 +480,22 @@ export function vuePluginArch(options: VuePluginArchOptions): Plugin[] {
     transformIndexHtml(html: string, context: IndexHtmlTransformContext) {
       if (!enableImportMap) return html
 
+      // In development mode, no importMap needed
       if (context.server) {
-        return html.replace(importMapPlaceholder, '')
+        return html
       }
 
-      const importMapScript = `<script type="importmap">{"imports": ${JSON.stringify(paths)}}</script>`
-      return html.replace(importMapPlaceholder, importMapScript)
+      // In build mode, inject importMap script before </head>
+      const importMapScript = `  <script type="importmap">{"imports": ${JSON.stringify(paths)}}</script>\n`
+
+      if (html.includes('</head>')) {
+        return html.replace('</head>', `${importMapScript}</head>`)
+      } else {
+        console.warn(
+          '[vue-plugin-arch] Warning: </head> tag not found in HTML template, importMap script not injected'
+        )
+        return html
+      }
     },
 
     async writeBundle() {

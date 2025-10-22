@@ -26,8 +26,6 @@ const createVuePluginArchConfig = (isDev: boolean): VuePluginArchOptions => {
     build: {
       copyPluginDist: !isDev,
       enableImportMap: !isDev,
-      importMapPlaceholder:
-        '<!-- !!!KEEP THIS!!! Import map will be injected by Vite -->',
     },
   }
   if (!isDev) {
