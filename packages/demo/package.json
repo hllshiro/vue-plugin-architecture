@@ -25,15 +25,14 @@
     "@vue-plugin-arch/types": "workspace:*",
     "ant-design-vue": "~4.2.6",
     "cross-env": "^10.1.0",
-    "javascript-obfuscator": "^4.1.1",
+    "javascript-obfuscator": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "unplugin-auto-import": "^20.2.0",
     "unplugin-vue-components": "^30.0.0",
     "vite": "catalog:",
-    "vite-plugin-bundle-obfuscator": "^1.8.0",
+    "vite-plugin-bundle-obfuscator": "catalog:",
     "vite-plugin-inspect": "^11.3.3",
-    "vite-plugin-static-copy": "^3.1.4",
     "vue-tsc": "catalog:"
   },
   "packageManager": "pnpm@10.18.1"

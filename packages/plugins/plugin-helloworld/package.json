@@ -38,7 +38,7 @@
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-css-injected-by-js": "^3.5.2",
+    "vite-plugin-css-injected-by-js": "catalog:",
     "vite-plugin-dts": "catalog:",
     "vue": "catalog:",
     "vue-i18n": "catalog:",

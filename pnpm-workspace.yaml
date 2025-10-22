@@ -6,17 +6,20 @@ packages:
   - packages/plugins/*
 
 catalog:
+  '@types/node': ^22.18.10
+  '@vitejs/plugin-vue': ^5.2.4
   dockview-vue: ^4.9.0
+  javascript-obfuscator: ^4.1.1
   mitt: ^3.0.1
   rimraf: 6.0.1
   typescript: ^5.9.3
   vite: ^7.0.0
+  vite-plugin-bundle-obfuscator: ^1.8.0
+  vite-plugin-css-injected-by-js: ^3.5.2
   vite-plugin-dts: ^4.5.4
   vue: ^3.5.0
-  vue-tsc: ^3.1.0
   vue-i18n: ^11.1.12
-  '@vitejs/plugin-vue': ^5.2.4
-  '@types/node': ^22.18.10
+  vue-tsc: ^3.1.0
 
 link-workspace-packages: true
 

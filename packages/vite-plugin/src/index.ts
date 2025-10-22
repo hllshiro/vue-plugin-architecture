@@ -1,167 +1,90 @@
-import type { Plugin, ResolvedConfig } from 'vite'
-import { watch } from 'chokidar'
-import { resolve as pathResolve, join } from 'path'
-import { existsSync, readFileSync } from 'fs'
+import type { IndexHtmlTransformContext, Plugin, ResolvedConfig } from 'vite'
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 
-import { getMergedPluginRegistry, STATIC_PATH } from './scanner'
+import { getMergedPluginRegistry } from './scanner'
 import type { PluginRegistryManifest } from '@vue-plugin-arch/types'
 
-const REGISTRY_ENDPOINT = '/api/plugin-registry.json'
+export interface StaticCopyTarget {
+  src: string
+  dest: string
+  rename?: string
+}
 
-export function vuePluginArch(): Plugin {
+export interface VuePluginArchOptions {
+  /**
+   * External dependencies to exclude from bundle
+   */
+  externalDeps?: string[]
+
+  /**
+   * Static copy targets for external dependencies
+   */
+  staticTargets?: StaticCopyTarget[]
+
+  /**
+   * Global variable names for external dependencies
+   */
+  globals?: Record<string, string>
+
+  /**
+   * Import paths for external dependencies
+   */
+  paths?: Record<string, string>
+
+  /**
+   * Whether to enable external dependency management
+   * @default true
+   */
+  enableExternalDeps?: boolean
+
+  /**
+   * Whether to enable static copy for external dependencies
+   * @default true
+   */
+  enableStaticCopy?: boolean
+
+  /**
+   * Whether to enable import map injection
+   * @default true
+   */
+  enableImportMap?: boolean
+
+  /**
+   * Import map placeholder in HTML
+   * @default '<!-- !!!KEEP THIS!!! Import map will be injected by Vite -->'
+   */
+  importMapPlaceholder?: string
+
+  /**
+   * Registry endpoint for plugin discovery
+   * @default '/api/plugin-registry.json'
+   */
+  registryEndpoint?: string
+}
+
+export function vuePluginArch(options: VuePluginArchOptions = {}): Plugin[] {
+  const {
+    externalDeps = [],
+    staticTargets = [],
+    globals = {},
+    paths = {},
+    enableExternalDeps = true,
+    enableStaticCopy = true,
+    enableImportMap = true,
+    importMapPlaceholder = '<!-- !!!KEEP THIS!!! Import map will be injected by Vite -->',
+    registryEndpoint = '/api/plugin-registry.json',
+  } = options
+
   let config: ResolvedConfig
-  let cachedRegistry: PluginRegistryManifest | undefined
-  let watcher: ReturnType<typeof watch> | undefined
 
   async function getMergedRegistry(): Promise<PluginRegistryManifest> {
-    if (cachedRegistry) {
-      return cachedRegistry
-    }
-    cachedRegistry = await getMergedPluginRegistry(config.root)
-    return cachedRegistry
+    return await getMergedPluginRegistry(config.root)
   }
 
-  function invalidateManifest() {
-    // Clear cached registry to force rescan
-    cachedRegistry = undefined
-    console.log(
-      `[@vue-plugin-arch/vite-plugin] Plugin manifest invalidated and will be regenerated on next request`
-    )
-  }
+  const plugins: Plugin[] = []
 
-  function setupFileWatcher() {
-    if (!config || config.command !== 'serve') {
-      return // Only watch in development mode
-    }
-
-    // Find the workspace root by looking for pnpm-workspace.yaml or package.json with workspaces
-    let workspaceRoot = config.root
-    let currentDir = config.root
-
-    while (currentDir !== pathResolve(currentDir, '..')) {
-      const pnpmWorkspaceFile = join(currentDir, 'pnpm-workspace.yaml')
-      const packageJsonFile = join(currentDir, 'package.json')
-
-      if (existsSync(pnpmWorkspaceFile)) {
-        workspaceRoot = currentDir
-        break
-      }
-
-      if (existsSync(packageJsonFile)) {
-        try {
-          const packageJson = JSON.parse(readFileSync(packageJsonFile, 'utf-8'))
-          if (packageJson.workspaces) {
-            workspaceRoot = currentDir
-            break
-          }
-        } catch {
-          // Continue searching
-        }
-      }
-
-      currentDir = pathResolve(currentDir, '..')
-    }
-
-    const workspacePluginsDir = pathResolve(workspaceRoot, 'packages/plugins')
-    const staticRegistryPath = pathResolve(workspaceRoot, STATIC_PATH)
-
-    const watchPaths: string[] = []
-
-    // Add plugin directories to watch if they exist
-    if (existsSync(workspacePluginsDir)) {
-      watchPaths.push(
-        join(workspacePluginsDir, '*/package.json'),
-        join(workspacePluginsDir, '*/src/**/*'),
-        join(workspacePluginsDir, '*/dist/**/*')
-      )
-    }
-
-    // Add static registry file to watch if it exists
-    if (existsSync(staticRegistryPath)) {
-      watchPaths.push(staticRegistryPath)
-    }
-
-    if (watchPaths.length === 0) {
-      console.log(
-        `[@vue-plugin-arch/vite-plugin] No plugin directories or static registry found, skipping file watcher setup`
-      )
-      return
-    }
-
-    console.log(
-      `[@vue-plugin-arch/vite-plugin] Setting up file watcher for workspace plugins and static registry`
-    )
-
-    // Watch for changes in workspace plugin directories and static registry
-    watcher = watch(watchPaths, {
-      ignored: ['**/node_modules/**', '**/.git/**'],
-      persistent: true,
-      ignoreInitial: true,
-    })
-
-    watcher.on('add', (path: string) => {
-      console.log(
-        `[@vue-plugin-arch/vite-plugin] Workspace plugin file added: ${path}`
-      )
-      invalidateManifest()
-    })
-
-    watcher.on('unlink', (path: string) => {
-      console.log(
-        `[@vue-plugin-arch/vite-plugin] Workspace plugin file removed: ${path}`
-      )
-      invalidateManifest()
-    })
-
-    watcher.on('change', (path: string) => {
-      console.log(`[@vue-plugin-arch/vite-plugin] File changed: ${path}`)
-
-      // For static registry changes, invalidate manifest immediately
-      if (path.endsWith('plugin-registry.json')) {
-        console.log(
-          `[@vue-plugin-arch/vite-plugin] Static registry file changed, invalidating manifest`
-        )
-        invalidateManifest()
-        return
-      }
-
-      // For source file changes, we need to trigger a rebuild
-      if (path.includes('/src/')) {
-        console.log(
-          `[@vue-plugin-arch/vite-plugin] Source file changed, plugin needs rebuild: ${path}`
-        )
-      }
-
-      // For dist file changes or package.json changes, invalidate manifest
-      if (path.includes('/dist/') || path.endsWith('package.json')) {
-        invalidateManifest()
-      }
-    })
-
-    watcher.on('addDir', (path: string) => {
-      if (path.includes('plugin-')) {
-        console.log(
-          `[@vue-plugin-arch/vite-plugin] New workspace plugin directory detected: ${path}`
-        )
-        invalidateManifest()
-      }
-    })
-
-    watcher.on('unlinkDir', (path: string) => {
-      if (path.includes('plugin-')) {
-        console.log(
-          `[@vue-plugin-arch/vite-plugin] Workspace plugin directory removed: ${path}`
-        )
-        invalidateManifest()
-      }
-    })
-
-    watcher.on('error', (error: unknown) => {
-      console.error(`[@vue-plugin-arch/vite-plugin] File watcher error:`, error)
-    })
-  }
-
-  return {
+  // Main plugin for registry management
+  const mainPlugin: Plugin = {
     name: 'vue-plugin-arch',
     enforce: 'pre',
 
@@ -169,18 +92,62 @@ export function vuePluginArch(): Plugin {
       config = resolvedConfig
     },
 
-    configureServer(devServer) {
-      setupFileWatcher()
+    config(config, { command }) {
+      // Only apply external deps configuration for build mode
+      if (command === 'build' && enableExternalDeps) {
+        config.build = config.build || {}
+        config.build.rollupOptions = config.build.rollupOptions || {}
 
+        // Set external dependencies
+        const existingExternal = config.build.rollupOptions.external
+        const existingExternalArray = Array.isArray(existingExternal)
+          ? existingExternal
+          : existingExternal
+            ? [existingExternal]
+            : []
+
+        config.build.rollupOptions.external = [
+          ...existingExternalArray.filter(
+            (ext): ext is string | RegExp =>
+              typeof ext === 'string' || ext instanceof RegExp
+          ),
+          ...externalDeps,
+        ]
+
+        // Set output configuration
+        config.build.rollupOptions.output = {
+          ...(config.build.rollupOptions.output || {}),
+          globals: {
+            ...(typeof config.build.rollupOptions.output === 'object' &&
+            config.build.rollupOptions.output &&
+            'globals' in config.build.rollupOptions.output
+              ? config.build.rollupOptions.output.globals
+              : {}),
+            ...globals,
+          },
+          paths: {
+            ...(typeof config.build.rollupOptions.output === 'object' &&
+            config.build.rollupOptions.output &&
+            'paths' in config.build.rollupOptions.output
+              ? config.build.rollupOptions.output.paths
+              : {}),
+            ...paths,
+          },
+          compact: true,
+        }
+      }
+    },
+
+    configureServer(devServer) {
       // Intercept registry endpoint requests
-      devServer.middlewares.use(REGISTRY_ENDPOINT, async (req, res, next) => {
+      devServer.middlewares.use(registryEndpoint, async (req, res, next) => {
         if (req.method !== 'GET') {
           return next()
         }
 
         try {
           console.log(
-            `[@vue-plugin-arch/vite-plugin] Serving merged plugin registry from ${REGISTRY_ENDPOINT}`
+            `[@vue-plugin-arch/vite-plugin] Serving merged plugin registry from ${registryEndpoint}`
           )
 
           const registryResponse = await getMergedRegistry()
@@ -205,14 +172,33 @@ export function vuePluginArch(): Plugin {
       })
     },
 
-    buildEnd() {
-      // Clean up watcher when build ends
-      if (watcher) {
-        watcher.close()
-        watcher = undefined
+    transformIndexHtml(html: string, context: IndexHtmlTransformContext) {
+      // Only inject import map in build mode and when enabled
+      if (context.server || !enableImportMap) {
+        // In development, remove the placeholder
+        return html.replace(importMapPlaceholder, '')
       }
+
+      // In production, inject import map for external dependencies
+      const importMapScript = `<script type="importmap">{"imports": ${JSON.stringify(paths)}}</script>`
+      return html.replace(importMapPlaceholder, importMapScript)
     },
   }
-}
 
-export default vuePluginArch
+  plugins.push(mainPlugin)
+
+  // Add static copy plugin if enabled
+  if (enableStaticCopy && staticTargets.length > 0) {
+    const staticCopyPlugin = viteStaticCopy({
+      targets: staticTargets,
+    })
+
+    if (Array.isArray(staticCopyPlugin)) {
+      plugins.push(...staticCopyPlugin)
+    } else {
+      plugins.push(staticCopyPlugin)
+    }
+  }
+
+  return plugins
+}
