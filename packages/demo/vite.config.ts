@@ -1,9 +1,8 @@
-import { defineConfig, loadEnv, UserConfig } from 'vite'
+import { defineConfig, loadEnv, UserConfig, PluginOption } from 'vite'
 import path from 'path'
 import vue from '@vitejs/plugin-vue'
 import Inspect from 'vite-plugin-inspect'
 import {
-  StaticCopyTarget,
   vuePluginArch,
   VuePluginArchOptions,
 } from '@vue-plugin-arch/vite-plugin'
@@ -14,29 +13,49 @@ import vitePluginBundleObfuscator from 'vite-plugin-bundle-obfuscator'
 import type { ObfuscatorOptions } from 'javascript-obfuscator'
 
 // Vue Plugin Architecture configuration
-const VUE_PLUGIN_ARCH_CONFIG: VuePluginArchOptions = {
-  externalDeps: ['vue', 'vue-i18n'],
-  staticTargets: [
-    {
-      src: 'node_modules/vue/dist/vue.esm-browser.prod.js',
-      dest: 'libs',
-      rename: 'vue.js',
+const createVuePluginArchConfig = (isDev: boolean): VuePluginArchOptions => {
+  const options: VuePluginArchOptions = {
+    workspace: {
+      root: path.resolve(__dirname, '../..'),
+      pluginsDir: 'packages/plugins',
     },
-    {
-      src: 'node_modules/vue-i18n/dist/vue-i18n.esm-browser.prod.js',
-      dest: 'libs',
-      rename: 'vue-i18n.js',
+    registry: {
+      endpoint: '/api/plugin-registry.json',
+      staticPath: 'packages/demo/public/api/plugin-registry.json',
     },
-  ] as StaticCopyTarget[],
-  paths: {
-    vue: '/libs/vue.js',
-    'vue-i18n': '/libs/vue-i18n.js',
-  },
-  importMapPlaceholder:
-    '<!-- !!!KEEP THIS!!! Import map will be injected by Vite -->',
-  registryEndpoint: '/api/plugin-registry.json',
+    build: {
+      copyPluginDist: !isDev,
+      enableImportMap: !isDev,
+      importMapPlaceholder:
+        '<!-- !!!KEEP THIS!!! Import map will be injected by Vite -->',
+    },
+  }
+  if (!isDev) {
+    options.external = {
+      deps: ['vue', 'vue-i18n'],
+      staticTargets: [
+        {
+          src: 'node_modules/vue/dist/vue.esm-browser.prod.js',
+          dest: 'libs',
+          rename: 'vue.js',
+        },
+        {
+          src: 'node_modules/vue-i18n/dist/vue-i18n.esm-browser.prod.js',
+          dest: 'libs',
+          rename: 'vue-i18n.js',
+        },
+      ],
+      paths: {
+        vue: '/libs/vue.js',
+        'vue-i18n': '/libs/vue-i18n.js',
+      },
+    }
+  }
+
+  return options
 }
 
+// encrypt configuration
 const allObfuscatorConfig = {
   excludes: [],
   enable: true,
@@ -85,20 +104,11 @@ export default defineConfig(({ command, mode }): UserConfig => {
   const env = loadEnv(mode, process.cwd())
   const isDebug = Boolean(env.VITE_DEBUG_MODE)
   const isDev = command === 'serve'
+  const encrypt = Boolean(env.VITE_CODE_ENCRYPTION)
 
-  const plugins = [
+  // 默认插件配置
+  const plugins: PluginOption[] = [
     vue(),
-    // Vue Plugin Architecture with external dependency management
-    ...vuePluginArch({
-      // Use ES module versions for better compatibility
-      externalDeps: isDev ? [] : VUE_PLUGIN_ARCH_CONFIG.externalDeps,
-      staticTargets: isDev ? [] : VUE_PLUGIN_ARCH_CONFIG.staticTargets,
-      paths: VUE_PLUGIN_ARCH_CONFIG.paths,
-      importMapPlaceholder: VUE_PLUGIN_ARCH_CONFIG.importMapPlaceholder,
-      registryEndpoint: VUE_PLUGIN_ARCH_CONFIG.registryEndpoint,
-      enableExternalDeps: !isDev,
-      enableStaticCopy: !isDev,
-    }),
     Components({
       dirs: ['src/components'],
       extensions: ['vue'],
@@ -118,11 +128,22 @@ export default defineConfig(({ command, mode }): UserConfig => {
         globalsPropValue: true, // 声明为全局变量
       },
     }),
-    vitePluginBundleObfuscator(allObfuscatorConfig),
   ]
 
+  // 插件机制相关处理
+  plugins.push(
+    // Vue Plugin Architecture with external dependency management
+    ...vuePluginArch(createVuePluginArchConfig(isDev))
+  )
+
+  // Inspect 插件
   if (isDebug) {
     plugins.push(Inspect())
+  }
+
+  // 代码加密
+  if (encrypt) {
+    plugins.push(vitePluginBundleObfuscator(allObfuscatorConfig))
   }
 
   const options: UserConfig = {
