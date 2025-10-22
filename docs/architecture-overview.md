@@ -6,14 +6,14 @@
 
 - **高度可扩展性**: 任何业务功能都可以作为独立的插件进行开发、部署和加载。
 - **关注点分离**: 核心框架专注于提供稳定、通用的服务，而插件则专注于实现具体的业务逻辑。
-- **动态化**: 支持在运行时动态加载、卸载和更新插件，无需重新编译主应用。
+- **动态化**: 支持在运行时通过URL动态加载、卸载和更新插件，无需重新编译主应用。
 - **开发效率**: 插件可以独立开发和测试，简化了团队协作和维护流程。
 
 ## 核心模块
 
 项目采用Monorepo结构，主要由以下几个核心模块（Package）组成：
 
-### 1. `@layout-plugin-loader/core`
+### 1. `@vue-plugin-arch/core`
 
 核心运行时库，是整个架构的心脏。它不关心任何具体的业务逻辑，只提供一套完整的插件生命周期管理和基础服务，包括：
 
@@ -23,15 +23,16 @@
 - **数据服务 (`PluginDataService`)**: 提供一个统一的键值存储API，允许插件持久化或共享状态，同时通过命名空间进行隔离。
 - **API代理 (`PluginServiceProxy`)**: 一个安全代理，将核心服务（布局、事件、数据）以受控的方式暴露给每个插件，避免插件直接访问核心实例。
 
-### 2. `@layout-plugin-loader/vite-plugin`
+### 2. `@vue-plugin-arch/vite-plugin`
 
 一个为本架构定制的Vite构建插件。它的主要职责是在**构建时**而非运行时工作：
 
-- **插件扫描**: 自动扫描项目 `packages/plugins` 目录下的所有插件包。
-- **清单生成**: 根据扫描结果，生成一个虚拟的插件清单模块 (`virtual:vue-plugin-arch/plugin-manifest`)。此清单包含了所有可用插件的元数据和异步加载器。
-- **热更新支持**: 在开发模式下，监听插件文件的变化，并自动更新插件清单，实现无缝的开发体验。
+- **插件注册表服务**: 提供 HTTP 请求拦截，合并本地插件和远程插件清单。
+- **本地插件扫描**: 自动扫描项目 `packages/plugins` 目录下的所有插件包，生成 `/@fs/` URL用于开发模式。
+- **importMap注入**: 在构建模式下，自动注入importMap到HTML中，以支持外部依赖的模块解析。
+- **热更新支持**: 在开发模式下，监听插件文件的变化，并自动更新插件注册表，实现无缝的开发体验。
 
-### 3. `@layout-plugin-loader/types`
+### 3. `@vue-plugin-arch/types`
 
 提供整个项目中共享的TypeScript类型定义。通过统一的类型，确保了核心库、插件和主应用之间接口调用的类型安全。
 
@@ -49,22 +50,32 @@
 graph TD
     subgraph "开发/构建阶段"
         A[开发者] --> B("插件源代码<br/>packages/plugins/*");
-        C("Vite Dev/Build") --> D["@layout-plugin-loader/vite-plugin"];
+        C("Vite Dev/Build") --> D["@vue-plugin-arch/vite-plugin"];
         B --> D;
-        D -- 生成 --> E["虚拟模块<br/>virtual:plugin-manifest"];
+        D -- 扫描本地插件 --> E["/@fs/ URLs<br/>(开发模式)"];
+        D -- 注入importMap --> F["HTML + importMap<br/>(构建模式)"];
+        D -- 提供端点 --> G["/api/plugin-registry.json"];
     end
 
     subgraph "运行时 (浏览器)"
-        F("主应用 Demo") -- 初始化 --> G["@layout-plugin-loader/core"];
-        E -- 导入 --> G;
-        G -- 读取清单 --> H{PluginManager};
-        H -- 按需加载 --> I("插件代码 Chunk");
-        I -- 安装 --> J[插件实例];
-        J -- 调用API --> G;
+        H("主应用 Demo") -- fetch --> G;
+        G -- 返回 --> I["插件注册表<br/>(本地+远程)"];
+        H -- 初始化 --> J["@vue-plugin-arch/core"];
+        I --> K{PluginManager};
+        K -- "import(pluginUrl)" --> L("动态加载插件模块");
+        L -- 安装 --> M[插件实例];
+        M -- 调用API --> J;
     end
 
-    A -- 编写 --> F;
-    C -- 打包 --> F;
+    subgraph "模块解析"
+        N["importMap<br/>(构建模式)"] --> L;
+        O["/@fs/ URLs<br/>(开发模式)"] --> L;
+    end
+
+    A -- 编写 --> H;
+    C -- 打包 --> H;
+    E --> O;
+    F --> N;
 ```
 
 ## 工作流程
@@ -74,24 +85,31 @@ graph TD
 ### 开发模式 (Dev Mode)
 
 1.  **启动**: 开发者运行 `pnpm dev` 启动主应用（`demo`）。
-2.  **扫描与监听**: Vite启动时，`@layout-plugin-loader/vite-plugin` 被激活。它会读取**项目根目录的 `package.json`**，查找 `dependencies` 中所有以 `@vue-plugin-arch/plugin-` 开头的依赖项作为插件。同时，它启动文件监视器（Watcher）来监听插件文件的变化。
-3.  **动态生成**: 当主应用代码 `import 'virtual:vue-plugin-arch/plugin-manifest'` 时，Vite插件会拦截该请求，并根据扫描到的插件列表，动态地生成并返回清单模块的内容。
-4.  **热更新**: 当被监听的插件文件发生变化时，监视器会捕捉到变更，并立即重新生成插件清单。Vite的HMR（热模块替换）机制会使主应用获取到新的清单，从而可以加载到最新的插件代码，通常无需手动刷新浏览器。
+2.  **插件注册表服务**: Vite启动时，`@vue-plugin-arch/vite-plugin` 被激活，提供 `/api/plugin-registry.json` 端点服务。
+3.  **本地插件扫描**: 插件自动扫描 `packages/plugins` 目录，为每个本地插件生成 `/@fs/` URL，指向其构建产物。
+4.  **远程插件合并**: 读取静态注册表文件（如果存在），将远程插件与本地插件合并，本地插件优先。
+5.  **动态加载**: 主应用通过fetch获取插件注册表，然后使用 `import()` 和插件的URL动态加载插件模块。
+6.  **热更新**: 当插件文件发生变化时，注册表自动更新，支持插件的热重载。
 
 ### 构建模式 (Build Mode)
 
 1.  **启动**: 开发者运行 `pnpm build` 对主应用进行生产环境打包。
-2.  **扫描**: `@layout-plugin-loader/vite-plugin` 被激活，执行与开发模式相同的扫描逻辑：读取根目录 `package.json` 的依赖项来发现所有已安装的插件，并生成最终的插件清单。
-3.  **代码分割**: Vite在分析代码依赖时，会看到清单中对各插件的动态导入语句 (`() => import(...)`)。基于这些语句，Vite会自动将每个插件打包成独立的JavaScript块（Chunk）。
-4.  **产出**: 最终生成一系列高度优化的静态资源文件（HTML, CSS, JS chunks），其中主应用的核心包不包含任何插件代码，实现了完美的按需加载。
+2.  **importMap注入**: `@vue-plugin-arch/vite-plugin` 在HTML中注入importMap，配置外部依赖的模块路径映射。
+3.  **静态资源复制**: 将外部依赖（如vue.js）复制到构建输出目录，支持运行时的模块解析。
+4.  **插件注册表**: 生成静态的插件注册表文件，包含所有可用插件的URL和元数据。
+5.  **产出**: 最终生成包含importMap的HTML文件和静态插件注册表，支持运行时动态加载预构建的插件。
 
 ### 运行时 (浏览器)
 
-此阶段在开发和构建模式下是相同的。
+此阶段在开发和构建模式下基本相同，但模块解析机制不同。
 
-1.  **应用初始化**: 浏览器加载主应用，`demo` 应用启动并初始化 `@layout-plugin-loader/core` 中的 `PluginManager`。
-2.  **加载清单**: `PluginManager` 导入由Vite插件提供的插件清单。
-3.  **按需加载插件**: 当需要加载某个插件时（例如，用户点击菜单或通过配置指定），`PluginManager` 从清单中找到该插件对应的 `loader` 函数并执行它。
-4.  **执行代码**: 浏览器根据 `import()` 请求，异步加载该插件对应的JavaScript Chunk文件。
+1.  **应用初始化**: 浏览器加载主应用，`demo` 应用启动并初始化 `@vue-plugin-arch/core` 中的 `PluginManager`。
+2.  **获取插件注册表**: 主应用通过fetch请求 `/api/plugin-registry.json` 获取可用插件列表。
+3.  **模块解析**:
+
+- **开发模式**: 使用 `/@fs/` URL直接加载本地插件构建产物
+- **构建模式**: 通过importMap解析外部依赖，支持CDN或其他远程URL加载插件
+
+4.  **按需加载插件**: 当需要加载某个插件时，`PluginManager` 使用插件清单中的URL通过 `import()` 动态加载。
 5.  **安装插件**: 代码加载成功后，`PluginManager` 执行插件的 `install` 方法，并将封装后的API代理 (`proxy`) 注入插件。
 6.  **插件激活**: 插件在其 `install` 方法中，调用API（如 `proxy.layoutApi.registerComponent`）来注册自己的UI组件、监听事件或执行其他初始化任务，正式开始工作。

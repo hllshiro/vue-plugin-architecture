@@ -10,8 +10,8 @@
 
 `PluginManager` 是插件管理的最高协调者。它的主要职责是：
 
-- **加载插件清单**: 从Vite插件生成的虚拟模块 `virtual:vue-plugin-arch/plugin-manifest` 中异步加载所有可用插件的清单。
-- **按需加载插件**: 提供 `loadPlugin(packageName)` 方法，根据插件包名异步加载插件代码。它利用了ES模块的动态 `import()` 特性，实现了代码的按需加载和自动代码分割。
+- **URL-based加载**: 接收包含URL的插件清单，通过 `import(pluginUrl)` 动态加载插件代码，支持本地 `/@fs/` URL和远程HTTP URL。
+- **按需加载插件**: 提供 `loadPlugin(manifest)` 方法，根据插件清单异步加载插件代码。利用ES模块的动态 `import()` 特性和importMap机制实现模块解析。
 - **管理生命周期**: 协调插件的安装 (`install`) 和卸载 (`teardown`) 流程。
 - **注入API代理**: 在安装插件时，创建一个 `PluginServiceProxy` 实例，并将这个安全的API代理注入到插件中，供插件调用核心服务。
 - **错误处理**: 捕获插件在加载或安装过程中发生的错误，更新插件状态，并发出全局错误事件。
