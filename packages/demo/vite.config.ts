@@ -28,10 +28,6 @@ const VUE_PLUGIN_ARCH_CONFIG: VuePluginArchOptions = {
       rename: 'vue-i18n.js',
     },
   ] as StaticCopyTarget[],
-  globals: {
-    vue: 'Vue',
-    'vue-i18n': 'VueI18n',
-  },
   paths: {
     vue: '/libs/vue.js',
     'vue-i18n': '/libs/vue-i18n.js',
@@ -96,7 +92,6 @@ export default defineConfig(({ mode }): UserConfig => {
       // Use ES module versions for better compatibility
       externalDeps: isDev ? [] : VUE_PLUGIN_ARCH_CONFIG.externalDeps,
       staticTargets: isDev ? [] : VUE_PLUGIN_ARCH_CONFIG.staticTargets,
-      globals: VUE_PLUGIN_ARCH_CONFIG.globals,
       paths: VUE_PLUGIN_ARCH_CONFIG.paths,
       importMapPlaceholder: VUE_PLUGIN_ARCH_CONFIG.importMapPlaceholder,
       registryEndpoint: VUE_PLUGIN_ARCH_CONFIG.registryEndpoint,
@@ -133,14 +128,6 @@ export default defineConfig(({ mode }): UserConfig => {
     build: {
       minify: true,
       sourcemap: isDev,
-      rollupOptions: {
-        output: {
-          // Ensure proper ES module format for dynamic import
-          format: 'es',
-          // Preserve module structure for better tree-shaking
-          preserveModules: false,
-        },
-      },
     },
     plugins,
     resolve: {

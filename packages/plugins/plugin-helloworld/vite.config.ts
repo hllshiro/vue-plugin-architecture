@@ -27,16 +27,6 @@ export default defineConfig({
     },
     rollupOptions: {
       external: ['vue', 'vue-i18n'],
-      output: {
-        globals: {
-          vue: 'Vue',
-          'vue-i18n': 'VueI18n',
-        },
-        // Ensure proper ES module format for dynamic import
-        format: 'es',
-        // Preserve module structure for better tree-shaking
-        preserveModules: false,
-      },
     },
     // Optimize for production and dynamic loading
     minify: 'esbuild',

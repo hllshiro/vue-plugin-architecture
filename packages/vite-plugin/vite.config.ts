@@ -38,10 +38,6 @@ export default defineConfig({
         'os',
         'util',
       ],
-      output: {
-        // Vite 插件运行在 Node.js 环境，不需要 globals
-        // globals 主要用于浏览器环境的 UMD 格式
-      },
     },
   },
 })

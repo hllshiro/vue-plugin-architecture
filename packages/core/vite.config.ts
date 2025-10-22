@@ -23,17 +23,10 @@ export default defineConfig({
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'VuePluginArchCore',
       fileName: 'index',
-      formats: ['es', 'umd'],
+      formats: ['es'],
     },
     rollupOptions: {
       external: ['vue', 'mitt', 'dockview-vue', '@vue-plugin-arch/types'],
-      output: {
-        globals: {
-          vue: 'Vue',
-          mitt: 'mitt',
-          'dockview-vue': 'DockviewVue',
-        },
-      },
     },
   },
 })
