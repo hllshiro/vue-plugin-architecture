@@ -22,11 +22,6 @@ export interface VuePluginArchOptions {
   staticTargets?: StaticCopyTarget[]
 
   /**
-   * Global variable names for external dependencies
-   */
-  globals?: Record<string, string>
-
-  /**
    * Import paths for external dependencies
    */
   paths?: Record<string, string>
@@ -66,7 +61,6 @@ export function vuePluginArch(options: VuePluginArchOptions = {}): Plugin[] {
   const {
     externalDeps = [],
     staticTargets = [],
-    globals = {},
     paths = {},
     enableExternalDeps = true,
     enableStaticCopy = true,
@@ -123,7 +117,6 @@ export function vuePluginArch(options: VuePluginArchOptions = {}): Plugin[] {
             'globals' in config.build.rollupOptions.output
               ? config.build.rollupOptions.output.globals
               : {}),
-            ...globals,
           },
           paths: {
             ...(typeof config.build.rollupOptions.output === 'object' &&
