@@ -1,5 +1,11 @@
 # @vue-plugin-arch/vite-plugin
 
+## 0.2.1
+
+### Patch Changes
+
+- feat(vite-plugin): support hmr in dev and auto copy local plugins to dist
+
 ## 0.2.0
 
 ### Minor Changes
