@@ -1,5 +1,11 @@
 # @vue-plugin-arch/types
 
+## 0.2.0
+
+### Minor Changes
+
+- feat(plugin-loader): the framework has been refactored using the importMap mechanism, and now both the dev and prod support dynamic loading of plugins via URLs
+
 ## 0.1.4
 
 ### Patch Changes
