@@ -109,10 +109,12 @@ async function validatePluginDistFile(
 /**
  * Scans plugins directory to find local plugins.
  * @param rootDir - The project root directory.
+ * @param isDev - Whether running in development mode.
  * @returns A promise that resolves to an array of plugin scan results.
  */
 export async function scanPluginsFromDirectory(
-  rootDir: string
+  rootDir: string,
+  isDev: boolean = false
 ): Promise<ScannedPlugin[]> {
   const results: ScannedPlugin[] = []
 
@@ -122,7 +124,7 @@ export async function scanPluginsFromDirectory(
   const pluginsDir = pathResolve(workspaceRoot, 'packages/plugins')
 
   console.log(
-    `[@vue-plugin-arch/vite-plugin] Starting plugin discovery from plugins directory: ${pluginsDir} (workspace root: ${workspaceRoot})`
+    `[@vue-plugin-arch/vite-plugin] Starting plugin discovery from plugins directory: ${pluginsDir} (workspace root: ${workspaceRoot}, dev mode: ${isDev})`
   )
 
   if (!existsSync(pluginsDir)) {
@@ -186,21 +188,43 @@ export async function scanPluginsFromDirectory(
           continue
         }
 
-        // Always point to dist artifacts
-        const distPath = join(pluginDir, packageJsonData.main)
-        console.log(
-          `[@vue-plugin-arch/vite-plugin] Checking dist file: ${distPath}`
-        )
+        let pluginUrl: string
 
-        // Comprehensive dist file validation
-        await validatePluginDistFile(packageJsonData.name, distPath)
+        if (isDev) {
+          // In development mode, load source files directly for HMR
+          const srcEntryPath = join(pluginDir, 'src/index.ts')
 
-        // Generate /@fs/ URL using utility function
-        const pluginUrl = await validateAndConvertPluginUrl(
-          pluginDir,
-          packageJsonData.main,
-          packageJsonData.name
-        )
+          if (existsSync(srcEntryPath)) {
+            pluginUrl = convertLocalPathToFsUrl(srcEntryPath)
+            console.log(
+              `[@vue-plugin-arch/vite-plugin] Development mode: Loading source file: ${srcEntryPath}`
+            )
+          } else {
+            // Fallback to dist if src doesn't exist
+            const distPath = join(pluginDir, packageJsonData.main)
+            await validatePluginDistFile(packageJsonData.name, distPath)
+            pluginUrl = convertLocalPathToFsUrl(distPath)
+            console.log(
+              `[@vue-plugin-arch/vite-plugin] Development mode fallback: Loading dist file: ${distPath}`
+            )
+          }
+        } else {
+          // In production mode, always use dist artifacts
+          const distPath = join(pluginDir, packageJsonData.main)
+          console.log(
+            `[@vue-plugin-arch/vite-plugin] Production mode: Checking dist file: ${distPath}`
+          )
+
+          // Comprehensive dist file validation
+          await validatePluginDistFile(packageJsonData.name, distPath)
+
+          // Generate /@fs/ URL using utility function
+          pluginUrl = await validateAndConvertPluginUrl(
+            pluginDir,
+            packageJsonData.main,
+            packageJsonData.name
+          )
+        }
 
         const manifest: PluginManifest = {
           displayName:
@@ -212,7 +236,7 @@ export async function scanPluginsFromDirectory(
           components: packageJsonData.components,
           icon: packageJsonData.icon,
           main: packageJsonData.main,
-          url: pluginUrl, // Use validated /@fs/ URL for local plugins
+          url: pluginUrl, // Use appropriate URL based on mode
         }
 
         results.push({
@@ -221,7 +245,7 @@ export async function scanPluginsFromDirectory(
           isWorkspacePlugin: true,
         })
         console.log(
-          `[@vue-plugin-arch/vite-plugin] Successfully loaded plugin: ${packageJsonData.name}`
+          `[@vue-plugin-arch/vite-plugin] Successfully loaded plugin: ${packageJsonData.name} (${isDev ? 'src' : 'dist'})`
         )
       } catch (error) {
         const errorMessage =
@@ -254,9 +278,9 @@ export async function scanPluginsFromDirectory(
     console.warn(
       `[@vue-plugin-arch/vite-plugin] No valid plugins found in plugins directory. This could mean:\n` +
         `  1. No plugin directories exist in packages/plugins/\n` +
-        `  2. Plugin packages are not built (missing dist files)\n` +
+        `  2. Plugin packages are not built (missing dist files) - only applies to production mode\n` +
         `  3. Plugin packages have invalid package.json structure\n` +
-        `To resolve: Ensure plugins are built before running the application.`
+        `To resolve: ${isDev ? 'Ensure plugin src/index.ts files exist' : 'Ensure plugins are built before running the application'}.`
     )
   }
 
@@ -266,14 +290,18 @@ export async function scanPluginsFromDirectory(
 /**
  * Discovers local plugins and generates their manifests with /@fs/ URLs
  * @param rootDir - The project root directory
+ * @param isDev - Whether running in development mode
  * @returns A promise that resolves to an array of local plugin manifests
  */
 export async function discoverLocalPlugins(
-  rootDir: string
+  rootDir: string,
+  isDev: boolean = false
 ): Promise<PluginManifest[]> {
-  console.log(`[@vue-plugin-arch/vite-plugin] Starting local plugin discovery`)
+  console.log(
+    `[@vue-plugin-arch/vite-plugin] Starting local plugin discovery (dev mode: ${isDev})`
+  )
 
-  const scannedPlugins = await scanPluginsFromDirectory(rootDir)
+  const scannedPlugins = await scanPluginsFromDirectory(rootDir, isDev)
   const manifests = scannedPlugins
     .filter(plugin => plugin.isWorkspacePlugin)
     .map(plugin => plugin.manifest)
@@ -401,17 +429,19 @@ export function mergePluginManifests(
 /**
  * Gets the merged plugin registry combining local and remote plugins
  * @param rootDir - The project root directory
+ * @param isDev - Whether running in development mode
  * @returns A promise that resolves to the complete plugin registry manifest
  */
 export async function getMergedPluginRegistry(
-  rootDir: string
+  rootDir: string,
+  isDev: boolean = false
 ): Promise<PluginRegistryManifest> {
   console.log(
-    `[@vue-plugin-arch/vite-plugin] Starting merged plugin registry generation`
+    `[@vue-plugin-arch/vite-plugin] Starting merged plugin registry generation (dev mode: ${isDev})`
   )
 
   // Get local plugins
-  const localPlugins = await discoverLocalPlugins(rootDir)
+  const localPlugins = await discoverLocalPlugins(rootDir, isDev)
 
   // Read static registry
   const staticRegistry = await readStaticRegistry(rootDir)
@@ -436,16 +466,18 @@ export async function getMergedPluginRegistry(
 /**
  * Scans for all plugins from the plugins directory.
  * @param rootDir - The project root directory.
+ * @param isDev - Whether running in development mode.
  * @returns A promise that resolves to an array of all plugin scan results.
  */
 export async function scanAllPlugins(
-  rootDir: string
+  rootDir: string,
+  isDev: boolean = false
 ): Promise<ScannedPlugin[]> {
   console.log(
-    `[@vue-plugin-arch/vite-plugin] Starting comprehensive plugin discovery`
+    `[@vue-plugin-arch/vite-plugin] Starting comprehensive plugin discovery (dev mode: ${isDev})`
   )
 
-  const directoryPlugins = await scanPluginsFromDirectory(rootDir)
+  const directoryPlugins = await scanPluginsFromDirectory(rootDir, isDev)
 
   console.log(
     `[@vue-plugin-arch/vite-plugin] Comprehensive plugin discovery completed. ` +

@@ -80,10 +80,11 @@ const allObfuscatorConfig = {
   } as ObfuscatorOptions,
 }
 
-export default defineConfig(({ mode }): UserConfig => {
+export default defineConfig(({ command, mode }): UserConfig => {
   console.log(`---- Mode: ${mode} ----\n`)
   const env = loadEnv(mode, process.cwd())
-  const isDev = Boolean(env.VITE_DEBUG_MODE)
+  const isDebug = Boolean(env.VITE_DEBUG_MODE)
+  const isDev = command === 'serve'
 
   const plugins = [
     vue(),
@@ -120,7 +121,7 @@ export default defineConfig(({ mode }): UserConfig => {
     vitePluginBundleObfuscator(allObfuscatorConfig),
   ]
 
-  if (isDev) {
+  if (isDebug) {
     plugins.push(Inspect())
   }
 

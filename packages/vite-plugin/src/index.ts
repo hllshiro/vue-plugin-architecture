@@ -70,9 +70,10 @@ export function vuePluginArch(options: VuePluginArchOptions = {}): Plugin[] {
   } = options
 
   let config: ResolvedConfig
+  let isDev = false
 
   async function getMergedRegistry(): Promise<PluginRegistryManifest> {
-    return await getMergedPluginRegistry(config.root)
+    return await getMergedPluginRegistry(config.root, isDev)
   }
 
   const plugins: Plugin[] = []
@@ -84,6 +85,7 @@ export function vuePluginArch(options: VuePluginArchOptions = {}): Plugin[] {
 
     configResolved(resolvedConfig) {
       config = resolvedConfig
+      isDev = config.command === 'serve'
     },
 
     config(config, { command }) {
