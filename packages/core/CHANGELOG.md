@@ -1,5 +1,16 @@
 # @vue-plugin-arch/core
 
+## 1.0.0
+
+### Major Changes
+
+- chore(release): release the first official version, synchronize the version numbers, and ensure compatibility
+
+### Patch Changes
+
+- Updated dependencies
+  - @vue-plugin-arch/types@1.0.0
+
 ## 0.2.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "@vue-plugin-arch/demo",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Vue 插件架构系统示例应用",
   "private": true,
   "type": "module",

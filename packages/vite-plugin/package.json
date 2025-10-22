@@ -1,6 +1,6 @@
 {
   "name": "@vue-plugin-arch/vite-plugin",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "description": "Vue 插件架构系统 Vite 插件",
   "type": "module",
   "main": "./dist/index.js",

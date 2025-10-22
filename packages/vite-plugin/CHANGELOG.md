@@ -1,5 +1,11 @@
 # @vue-plugin-arch/vite-plugin
 
+## 1.0.0
+
+### Major Changes
+
+- chore(release): release the first official version, synchronize the version numbers, and ensure compatibility
+
 ## 0.2.2
 
 ### Patch Changes
