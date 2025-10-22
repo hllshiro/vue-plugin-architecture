@@ -1,58 +1,13 @@
 {
   "plugins": [
     {
-      "name": "@vue-plugin-arch/plugin-helloworld",
-      "version": "0.1.0",
-      "description": "Remote version of helloworld plugin (should be overridden by local)",
-      "main": "dist/index.js",
-      "displayName": "Remote Hello World",
-      "components": [
-        {
-          "name": "RemoteHelloPanel",
-          "path": "src/components/RemoteHelloPanel.vue",
-          "title": "Remote Hello",
-          "defaultPosition": "left",
-          "icon": "🌍"
-        }
-      ],
-      "icon": "🌍",
-      "url": "http://localhost:4173/plugins/helloworld/dist/index.js"
-    },
-    {
-      "name": "@example/remote-plugin-1",
+      "name": "@unknown/remote-plugin-1",
       "version": "1.0.0",
       "description": "Example remote plugin for demonstration",
       "main": "dist/index.js",
       "displayName": "Remote Plugin 1",
-      "components": [
-        {
-          "name": "RemotePanel",
-          "path": "src/components/RemotePanel.vue",
-          "title": "Remote Panel",
-          "defaultPosition": "right",
-          "icon": "🌐"
-        }
-      ],
       "icon": "🌐",
       "url": "https://example.com/plugins/remote-plugin-1/dist/index.js"
-    },
-    {
-      "name": "@example/remote-plugin-2",
-      "version": "2.1.0",
-      "description": "Another example remote plugin",
-      "main": "dist/index.js",
-      "displayName": "Remote Plugin 2",
-      "components": [
-        {
-          "name": "RemoteDataPanel",
-          "path": "src/components/RemoteDataPanel.vue",
-          "title": "Remote Data",
-          "defaultPosition": "bottom",
-          "icon": "📊"
-        }
-      ],
-      "icon": "📊",
-      "url": "https://example.com/plugins/remote-plugin-2/dist/index.js"
     }
   ],
   "version": "1.0.0",
