@@ -1,5 +1,11 @@
 # @vue-plugin-arch/vite-plugin
 
+## 0.2.2
+
+### Patch Changes
+
+- refactor(vite-plugin): Simplify import map injection and configuration
+
 ## 0.2.1
 
 ### Patch Changes
