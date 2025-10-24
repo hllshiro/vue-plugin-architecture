@@ -80,10 +80,6 @@ test-results/
 playwright-report/
 test-results.xml
 
-# Workspace specific
-# Uncomment if you want to ignore workspace lockfile
-pnpm-lock.yaml
-
 # Package manager alternatives (if switching between managers)
 yarn.lock
 package-lock.json

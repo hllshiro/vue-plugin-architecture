@@ -34,11 +34,20 @@
     "actions": {
       "load": "加载",
       "unload": "卸载",
-      "loading": "处理中..."
+      "loading": "处理中...",
+      "retry": "重试"
+    },
+    "loading": {
+      "registry": "正在加载插件注册表..."
+    },
+    "labels": {
+      "local": "本地",
+      "remote": "远程"
     },
     "emptyState": "暂无可用插件",
     "error": {
-      "operationFailed": "操作插件失败"
+      "operationFailed": "操作插件失败",
+      "registryFailed": "加载插件注册表失败"
     }
   }
 }

@@ -7,6 +7,7 @@ export default {
       RuleConfigSeverity.Error,
       'always',
       [
+        'wip',
         'feat',
         'fix',
         'docs',

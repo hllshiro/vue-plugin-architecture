@@ -1,5 +1,43 @@
 # @vue-plugin-arch/demo
 
+## 0.1.9
+
+### Patch Changes
+
+- Updated dependencies
+  - @vue-plugin-arch/vite-plugin@1.0.1
+  - @vue-plugin-arch/core@1.0.1
+
+## 0.1.8
+
+### Patch Changes
+
+- Updated dependencies
+  - @vue-plugin-arch/vite-plugin@1.0.0
+  - @vue-plugin-arch/core@1.0.0
+
+## 0.1.7
+
+### Patch Changes
+
+- Updated dependencies
+  - @vue-plugin-arch/vite-plugin@0.2.2
+
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies
+  - @vue-plugin-arch/vite-plugin@0.2.1
+
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies
+  - @vue-plugin-arch/vite-plugin@0.2.0
+  - @vue-plugin-arch/core@0.2.0
+
 ## 0.1.4
 
 ### Patch Changes

@@ -1,19 +1,18 @@
 {
   "name": "@vue-plugin-arch/demo",
-  "version": "0.1.4",
+  "version": "0.1.9",
   "description": "Vue 插件架构系统示例应用",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --mode development",
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build --mode production",
     "preview": "vite preview",
     "type-check": "vue-tsc --noEmit",
     "clean": "rimraf dist"
   },
   "dependencies": {
     "@vue-plugin-arch/core": "workspace:*",
-    "@vue-plugin-arch/plugin-helloworld": "workspace:*",
     "@vue-plugin-arch/vite-plugin": "workspace:*",
     "dockview-vue": "catalog:",
     "mitt": "catalog:",
@@ -26,13 +25,13 @@
     "@vue-plugin-arch/types": "workspace:*",
     "ant-design-vue": "~4.2.6",
     "cross-env": "^10.1.0",
-    "javascript-obfuscator": "^4.1.1",
+    "javascript-obfuscator": "catalog:",
     "rimraf": "catalog:",
     "typescript": "catalog:",
     "unplugin-auto-import": "^20.2.0",
     "unplugin-vue-components": "^30.0.0",
     "vite": "catalog:",
-    "vite-plugin-bundle-obfuscator": "^1.8.0",
+    "vite-plugin-bundle-obfuscator": "catalog:",
     "vite-plugin-inspect": "^11.3.3",
     "vue-tsc": "catalog:"
   },

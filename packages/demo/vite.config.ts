@@ -1,14 +1,59 @@
-import { defineConfig, loadEnv, UserConfig } from 'vite'
+import { defineConfig, loadEnv, UserConfig, PluginOption } from 'vite'
 import path from 'path'
 import vue from '@vitejs/plugin-vue'
 import Inspect from 'vite-plugin-inspect'
-import { vuePluginArch } from '@vue-plugin-arch/vite-plugin'
-import vitePluginBundleObfuscator from 'vite-plugin-bundle-obfuscator'
-import type { ObfuscatorOptions } from 'javascript-obfuscator'
+import {
+  vuePluginArch,
+  VuePluginArchOptions,
+} from '@vue-plugin-arch/vite-plugin'
 import Components from 'unplugin-vue-components/vite'
 import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
 import AutoImport from 'unplugin-auto-import/vite'
+import vitePluginBundleObfuscator from 'vite-plugin-bundle-obfuscator'
+import type { ObfuscatorOptions } from 'javascript-obfuscator'
 
+// Vue Plugin Architecture configuration
+const createVuePluginArchConfig = (isDev: boolean): VuePluginArchOptions => {
+  const options: VuePluginArchOptions = {
+    workspace: {
+      root: path.resolve(__dirname, '../..'),
+      pluginsDir: 'packages/plugins',
+    },
+    registry: {
+      endpoint: '/api/plugin-registry.json',
+      staticPath: 'packages/demo/public/api/plugin-registry.json',
+    },
+    build: {
+      copyPluginDist: !isDev,
+      enableImportMap: !isDev,
+    },
+  }
+  if (!isDev) {
+    options.external = {
+      deps: ['vue', 'vue-i18n'],
+      staticTargets: [
+        {
+          src: 'node_modules/vue/dist/vue.esm-browser.prod.js',
+          dest: 'libs',
+          rename: 'vue.js',
+        },
+        {
+          src: 'node_modules/vue-i18n/dist/vue-i18n.esm-browser.prod.js',
+          dest: 'libs',
+          rename: 'vue-i18n.js',
+        },
+      ],
+      paths: {
+        vue: '/libs/vue.js',
+        'vue-i18n': '/libs/vue-i18n.js',
+      },
+    }
+  }
+
+  return options
+}
+
+// encrypt configuration
 const allObfuscatorConfig = {
   excludes: [],
   enable: true,
@@ -52,11 +97,16 @@ const allObfuscatorConfig = {
   } as ObfuscatorOptions,
 }
 
-export default defineConfig(({ mode }): UserConfig => {
+export default defineConfig(({ command, mode }): UserConfig => {
   console.log(`---- Mode: ${mode} ----\n`)
-  const plugins = [
+  const env = loadEnv(mode, process.cwd())
+  const isDebug = Boolean(env.VITE_DEBUG_MODE)
+  const isDev = command === 'serve'
+  const encrypt = Boolean(env.VITE_CODE_ENCRYPTION)
+
+  // 默认插件配置
+  const plugins: PluginOption[] = [
     vue(),
-    vuePluginArch(),
     Components({
       dirs: ['src/components'],
       extensions: ['vue'],
@@ -76,33 +126,28 @@ export default defineConfig(({ mode }): UserConfig => {
         globalsPropValue: true, // 声明为全局变量
       },
     }),
-    vitePluginBundleObfuscator(allObfuscatorConfig),
   ]
 
-  const env = loadEnv(mode, process.cwd())
-  const debug = Boolean(env.VITE_DEBUG_MODE)
-  if (debug) {
+  // 插件机制相关处理
+  plugins.push(
+    // Vue Plugin Architecture with external dependency management
+    ...vuePluginArch(createVuePluginArchConfig(isDev))
+  )
+
+  // Inspect 插件
+  if (isDebug) {
     plugins.push(Inspect())
+  }
+
+  // 代码加密
+  if (encrypt) {
+    plugins.push(vitePluginBundleObfuscator(allObfuscatorConfig))
   }
 
   const options: UserConfig = {
     build: {
       minify: true,
-      sourcemap: debug,
-      rollupOptions: {
-        output: {
-          compact: true,
-          /* manualChunks: {
-            vue: ['vue'],
-          }, */
-          /* chunkFileNames: chunkInfo => {
-            if (chunkInfo.name === 'vue') {
-              return 'assets/vue.js' // Name the vue chunk predictably
-            }
-            return 'assets/[name]-[hash].js' // Keep hashes for other chunks
-          }, */
-        },
-      },
+      sourcemap: isDev,
     },
     plugins,
     resolve: {
@@ -121,6 +166,12 @@ export default defineConfig(({ mode }): UserConfig => {
     server: {
       open: false,
       hmr: true,
+      fs: {
+        // Allow serving files from anywhere in development
+        allow: ['..', '../..', '/'],
+        // In development, allow @fs imports for testing
+        strict: false,
+      },
     },
   }
 

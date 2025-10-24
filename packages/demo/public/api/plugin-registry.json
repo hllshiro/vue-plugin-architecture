@@ -1,0 +1,15 @@
+{
+  "plugins": [
+    {
+      "name": "@unknown/remote-plugin-1",
+      "version": "1.0.0",
+      "description": "Example remote plugin for demonstration",
+      "main": "dist/index.js",
+      "displayName": "Remote Plugin 1",
+      "icon": "🌐",
+      "url": "https://example.com/plugins/remote-plugin-1/dist/index.js"
+    }
+  ],
+  "version": "1.0.0",
+  "lastUpdated": "2024-01-01T00:00:00.000Z"
+}

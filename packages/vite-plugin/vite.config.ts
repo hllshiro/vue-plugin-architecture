@@ -9,7 +9,6 @@ export default defineConfig({
       include: ['src/**/*'],
       exclude: ['node_modules/**/*'],
       rollupTypes: true,
-      bundledPackages: ['@vue-plugin-arch/core'],
     }),
   ],
   build: {
@@ -21,26 +20,24 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
+      // 只需要 external 以下几个关键依赖：
+      // 1. vite - 作为 peerDependency，由使用者提供
+      // 2. Node.js 内置模块 - 运行时环境提供
+      // 3. 大型依赖包 - 避免重复打包
       external: [
         'vite',
-        'chokidar',
-        'fast-glob',
-        'magic-string',
-        'resolve',
-        'find-up',
+        /^node:/, // Node.js 内置模块（node: 前缀）
+        // Node.js 内置模块（无前缀，为了兼容性）
         'fs',
         'fs/promises',
         'path',
-        /^node:.*/,
-        '@vue-plugin-arch/core',
+        'url',
+        'module',
+        'events',
+        'stream',
+        'os',
+        'util',
       ],
-      output: {
-        globals: {
-          vite: 'vite',
-          'fast-glob': 'fastGlob',
-          'magic-string': 'MagicString',
-        },
-      },
     },
   },
 })

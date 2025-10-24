@@ -2,12 +2,37 @@
   <div class="plugin-manager">
     <h2>{{ t('pluginManager.title') }}</h2>
 
-    <div class="plugin-list">
+    <!-- Loading state for registry fetching -->
+    <div v-if="registryLoading" class="loading-state">
+      <p>{{ t('pluginManager.loading.registry') }}</p>
+    </div>
+
+    <!-- Error state for registry fetching -->
+    <div v-else-if="registryError" class="error-state">
+      <p>{{ t('pluginManager.error.registryFailed') }}: {{ registryError }}</p>
+      <button class="btn btn-primary" @click="loadPluginRegistry">
+        {{ t('pluginManager.actions.retry') }}
+      </button>
+    </div>
+
+    <!-- Plugin list -->
+    <div v-else class="plugin-list">
       <div v-for="plugin in plugins" :key="plugin.name" class="plugin-item">
         <div class="plugin-info">
-          <h3>{{ plugin.name }}</h3>
+          <div class="plugin-header">
+            <span class="plugin-icon">{{ plugin.icon || '🔌' }}</span>
+            <h3>{{ plugin.displayName || plugin.name }}</h3>
+          </div>
           <p>{{ plugin.description }}</p>
-          <span class="plugin-version">v{{ plugin.version }}</span>
+          <div class="plugin-meta">
+            <span class="plugin-version">v{{ plugin.version }}</span>
+            <span v-if="plugin.url.startsWith('/@fs/')" class="plugin-local">
+              {{ t('pluginManager.labels.local') }}
+            </span>
+            <span v-else class="plugin-remote">
+              {{ t('pluginManager.labels.remote') }}
+            </span>
+          </div>
         </div>
 
         <div class="plugin-actions">
@@ -23,18 +48,18 @@
       </div>
     </div>
 
-    <div v-if="plugins.length === 0" class="empty-state">
+    <div
+      v-if="!registryLoading && !registryError && plugins.length === 0"
+      class="empty-state"
+    >
       <p>{{ t('pluginManager.emptyState') }}</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {
-  IPluginManager,
-  PluginLoader,
-  PluginManifest,
-} from '@vue-plugin-arch/types'
+import { IPluginManager, PluginManifest } from '@vue-plugin-arch/types'
+import { PluginRegistryService } from '../services/pluginRegistryService'
 
 const { t } = useI18n()
 
@@ -45,6 +70,11 @@ interface UIPlugin extends PluginManifest {
 
 const pluginManager = inject<IPluginManager>('pluginManager')!
 const plugins = ref<UIPlugin[]>([])
+const registryLoading = ref(false)
+const registryError = ref<string | null>(null)
+
+// Initialize registry service
+const registryService = new PluginRegistryService()
 
 const getButtonText = (plugin: UIPlugin): string => {
   if (plugin.loading) {
@@ -63,7 +93,7 @@ const togglePlugin = async (plugin: UIPlugin) => {
     if (plugin.loaded) {
       await pluginManager.unloadPlugin(plugin.name)
     } else {
-      await pluginManager.loadPlugin(plugin.name)
+      await pluginManager.loadPlugin(plugin as PluginManifest)
     }
     // Update the loaded state after the operation
     plugin.loaded = pluginManager.isPluginLoaded(plugin.name)
@@ -77,19 +107,31 @@ const togglePlugin = async (plugin: UIPlugin) => {
   }
 }
 
-import manifest from 'virtual:vue-plugin-arch/plugin-manifest'
+const loadPluginRegistry = async () => {
+  registryLoading.value = true
+  registryError.value = null
 
-onMounted(() => {
   try {
-    plugins.value = Object.values(manifest).map((entry: PluginLoader) => ({
-      ...entry.manifest,
-      loaded: pluginManager.isPluginLoaded(entry.manifest.name),
+    const availablePlugins = await registryService.getMergedPluginList()
+
+    // Convert to UI plugins with loading states
+    plugins.value = availablePlugins.map(plugin => ({
+      ...plugin,
+      loaded: pluginManager.isPluginLoaded(plugin.name),
       loading: false,
     }))
   } catch (error) {
-    console.error('Could not load plugin list from virtual module:', error)
+    console.error('Failed to load plugin registry:', error)
+    registryError.value = (error as Error).message
     plugins.value = []
+  } finally {
+    registryLoading.value = false
   }
+}
+
+// Load plugin registry on component mount
+onMounted(() => {
+  loadPluginRegistry()
 })
 </script>
 
@@ -101,6 +143,17 @@ onMounted(() => {
   background-color: var(--dv-group-view-background-color);
   color: var(--dv-activegroup-visiblepanel-tab-color);
   height: 100%;
+}
+
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
+}
+
+.error-state {
+  color: var(--dv-drag-over-border-color);
 }
 
 .plugin-list {
@@ -120,14 +173,31 @@ onMounted(() => {
   box-shadow: var(--dv-floating-box-shadow);
 }
 
+.plugin-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.plugin-icon {
+  font-size: 1.25rem;
+}
+
 .plugin-info h3 {
-  margin: 0 0 0.5rem 0;
+  margin: 0;
   color: var(--dv-activegroup-visiblepanel-tab-color);
 }
 
 .plugin-info p {
   margin: 0 0 0.5rem 0;
   color: var(--dv-inactivegroup-visiblepanel-tab-color);
+}
+
+.plugin-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .plugin-version {
@@ -137,6 +207,26 @@ onMounted(() => {
   border: 1px solid var(--dv-separator-border);
   border-radius: 4px;
   font-size: 0.875rem;
+  color: var(--dv-inactivegroup-visiblepanel-tab-color);
+}
+
+.plugin-local {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--dv-paneview-active-outline-color);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: white;
+  font-weight: 500;
+}
+
+.plugin-remote {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--dv-inactivegroup-visiblepanel-tab-background-color);
+  border: 1px solid var(--dv-separator-border);
+  border-radius: 4px;
+  font-size: 0.75rem;
   color: var(--dv-inactivegroup-visiblepanel-tab-color);
 }
 
@@ -162,6 +252,16 @@ onMounted(() => {
   color: var(--dv-inactivegroup-hiddenpanel-tab-color);
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.btn-primary {
+  background-color: var(--dv-paneview-active-outline-color);
+  color: white;
+  border-color: var(--dv-paneview-active-outline-color);
+}
+
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
 }
 
 .btn-success {
