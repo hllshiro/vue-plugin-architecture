@@ -1,5 +1,11 @@
 # @vue-plugin-arch/types
 
+## 1.0.1
+
+### Patch Changes
+
+- chore: update package info
+
 ## 1.0.0
 
 ### Major Changes

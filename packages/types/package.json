@@ -1,7 +1,15 @@
 {
   "name": "@vue-plugin-arch/types",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Shared types for the Vue Plugin Architecture system",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hllshiro/vue-plugin-architecture.git"
+  },
+  "homepage": "https://github.com/hllshiro/vue-plugin-architecture",
+  "bugs": {
+    "url": "https://github.com/hllshiro/vue-plugin-architecture/issues"
+  },
   "type": "module",
   "types": "./dist/index.d.ts",
   "exports": {
