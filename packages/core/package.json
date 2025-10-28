@@ -1,6 +1,6 @@
 {
   "name": "@vue-plugin-arch/core",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Vue 插件架构系统核心包",
   "repository": {
     "type": "git",
@@ -21,7 +21,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
     "build": "vue-tsc -b && vite build",

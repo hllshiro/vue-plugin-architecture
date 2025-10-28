@@ -1,5 +1,13 @@
 # @vue-plugin-arch/core
 
+## 1.0.2
+
+### Patch Changes
+
+- chore: add src when publish
+- Updated dependencies
+  - @vue-plugin-arch/types@1.0.2
+
 ## 1.0.1
 
 ### Patch Changes

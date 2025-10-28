@@ -1,6 +1,6 @@
 {
   "name": "@vue-plugin-arch/types",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Shared types for the Vue Plugin Architecture system",
   "repository": {
     "type": "git",
@@ -18,7 +18,8 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
   "publishConfig": {
     "access": "public"

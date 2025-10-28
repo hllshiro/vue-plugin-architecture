@@ -38,6 +38,12 @@ export default defineConfig({
         'os',
         'util',
       ],
+      output: {
+        sourcemapPathTransform: relativeSourcePath => {
+          // 确保 source map 中的路径指向正确的源码位置
+          return relativeSourcePath.replace(/^\.\.\//, '')
+        },
+      },
     },
   },
 })

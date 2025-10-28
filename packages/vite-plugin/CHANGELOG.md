@@ -1,5 +1,11 @@
 # @vue-plugin-arch/vite-plugin
 
+## 1.0.2
+
+### Patch Changes
+
+- chore: add src when publish
+
 ## 1.0.1
 
 ### Patch Changes

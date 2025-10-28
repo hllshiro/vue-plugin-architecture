@@ -27,6 +27,12 @@ export default defineConfig({
     },
     rollupOptions: {
       external: ['vue', 'vue-i18n'],
+      output: {
+        sourcemapPathTransform: relativeSourcePath => {
+          // 确保 source map 中的路径指向正确的源码位置
+          return relativeSourcePath.replace(/^\.\.\//, '')
+        },
+      },
     },
     // Optimize for production and dynamic loading
     minify: 'esbuild',

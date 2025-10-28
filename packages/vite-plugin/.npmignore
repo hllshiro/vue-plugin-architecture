@@ -1,0 +1,22 @@
+# Development files
+node_modules/
+*.log
+.DS_Store
+.env*
+
+# Build artifacts (keep dist and src)
+# dist/ - 不要忽略，这是构建输出
+# src/ - 不要忽略，这是源码
+
+# Development configs
+vite.config.ts.timestamp-*
+tsconfig.tsbuildinfo
+
+# Testing
+coverage/
+*.test.*
+*.spec.*
+
+# IDE
+.vscode/
+.idea/

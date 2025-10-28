@@ -1,5 +1,13 @@
 # @vue-plugin-arch/demo
 
+## 0.1.10
+
+### Patch Changes
+
+- Updated dependencies
+  - @vue-plugin-arch/vite-plugin@1.0.2
+  - @vue-plugin-arch/core@1.0.2
+
 ## 0.1.9
 
 ### Patch Changes
