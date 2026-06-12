@@ -2,6 +2,7 @@
   "name": "@vue-plugin-arch/types",
   "version": "1.0.2",
   "description": "Shared types for the Vue Plugin Architecture system",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/hllshiro/vue-plugin-architecture.git"
